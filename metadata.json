@@ -1,0 +1,8 @@
+{
+  "name": "Xmedcar — Online Pharmacy & Wellness Store",
+  "description": "Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

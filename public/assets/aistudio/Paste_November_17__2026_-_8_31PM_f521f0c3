@@ -1,0 +1,245 @@
+Pharmacy E-commerce Store — Screen Design Brief
+Working document for building the store from the 32 curated preview screens (source: theme preview set, 1920 px wide desktop captures). Screens are referenced by the renamed filenames shipped in store_design_screens.zip.
+1. Purpose and Overall Flow
+This brief explains how each of the 32 screens should be used when building the store: the role every screen plays in the shopper journey, the components it introduces, the patterns worth reusing, responsive behaviour to target, and its dependencies on other screens. The screens come from a pharmacy/wellness theme, so several flows are category-specific — most notably the prescription (Rx) ordering path and medicine subscriptions — and must be built as first-class flows, not afterthoughts.
+Primary shopper journey covered by the kit: Discover (01–05 homepage layouts) → Browse & filter catalog (06–09) → Evaluate product (10–11) → Purchase (12–14 cart & checkout, with the Rx path 15–16 branching off checkout) → Manage post-purchase (17–20 account area, 21–22 auth) → Support & content (23–32).
+IMPORTANT — Note: five homepage variants exist because the theme sells five layout options. Build exactly ONE homepage for the store (recommended: Layout 1 as the base) and treat the other four as alternate section libraries to borrow modules from. Do not build all five.
+2. Global Component and Style System (build once, reuse everywhere)
+Nearly every screen is assembled from the same library. Build these shared components first; each per-screen section then only lists what is unique.
+2.1 Design tokens
+Token	Observed value / pattern	Where seen
+Primary CTA colour	Purple/violet (Add to Cart buttons, Apply Coupon, Proceed to Checkout, hover states)	06, 10, 12, 14
+Secondary accent	Red — Buy It Now, discount tags, sale highlights, 15% OFF badge	10, 07
+Brand/footer colour	Dark navy blue footer and header accents across all pages	all screens
+Badge system	Rx (prescription required), temperature-controlled, leaf (natural), discount % pill, NEW tag	06, 07, 08, 10
+Typography	Sans-serif UI; strong bold H1/H2 section titles; small caps / uppercase category tags	all
+Section pattern	Every page ends with: 4-item trust bar (money-back, warranty, free shipping, secure payment) + dark footer (links, newsletter, socials, payment icons)	all
+Card anatomy	Image → badges → category tag → title → star rating + count → price (sale + strike-through) → Add to Cart; hover reveals wishlist heart + quick-view eye	06, 07, 08, 10
+Filter pills	Applied filters render as removable pill tags with a global Clear All	06, 07, 08
+Status tags	ACTIVE / PAUSED (subscriptions), Pending / Converted / Completed (orders)	17–20
+Base canvas	All captures 1920 px wide; design desktop-first, content max-width ~1200–1320 px	all
+2.2 Shared components checklist
+•	Header (3 tiers): announcement bar → logo / category search / support & account / cart badge → primary nav with 'Order Via Prescription' CTA
+•	Footer (dark navy): brand blurb, link columns, newsletter input, socials, payment icons
+•	Trust features bar (4 icons) used above the footer on every page
+•	Product card (grid + list variants) with badge slot, rating, price block, hover actions
+•	Quantity stepper (used in list cards, PDP, cart, cart drawer)
+•	Breadcrumb + page-title header block used on all inner pages
+•	Modals: sign in (21), register (22), search overlay (23), newsletter (24), subscription history (20)
+•	Drawers: filter drawer left (09), quick view right (11), mini cart right (13)
+•	Account sidebar navigation (17–20 share one component with an active-item state)
+•	Pagination component (06, 07, 08, 27)
+3. Per-Screen Specifications
+32 screens, ordered by shopper journey stage. Filename is the exact file in the delivered zip.
+01_homepage_layout_1.png
+Role: Homepage — recommended base layout
+Components / content to build: Primary landing page. Hero with left vertical category rail + promotional hero visual; 'Top Picks This Week' carousel; Top Categories grid; dual promo banners; Featured Products grid; countdown deal banner; split banner with category highlights (Sonic Toothbrush, Oral Medicine, Supplements, Medical Mask); 3-column product row (Recent / Bestsellers / Sale Off); blog cards; trust bar; footer.
+Reusable patterns & tokens: Section-stack pattern: hero → categories → product carousels → promo banners → content → footer, reusable for any landing page; Countdown timer banner component (reuse in 02 Best Deals); 3-column product list = one component, three data sources; Category rail doubles as the flyout trigger shown in 26
+Responsive notes: Hero collapses to a banner; category rail becomes a horizontal chip row or hamburger accordion; carousels swipe; 3-column product row stacks to 1 column.
+Depends on: 26_category_flyout_hover.jpg (rail hover state); 23_search_overlay.jpg; 13_cart_drawer.jpg (header mini-cart)
+02_homepage_layout_2.png
+Role: Homepage variant — alternate section library
+Components / content to build: Announcement bar; hero slider ('Essential Vitamins for Wellness'); circular icon category carousel; Featured Products grid with left vertical promo banner; horizontal promo banners; Top Picks with tall promo card; full-width price-highlight banner; 'Best Deals Of The Week!' with countdown; triple promo cards; 3-column section with centered featured promo card; partner logo grid; 4-column blog grid.
+Reusable patterns & tokens: Icon-based circular category carousel (alternative to image-card grid in 01/03); Tall promo card slotted inside a product grid; Partner/logo showcase grid (also in 29)
+Responsive notes: Circular carousel scrolls horizontally; blog grid 4 → 2 → 1 columns.
+Depends on: Use only for borrowing sections; do not build as a second homepage
+03_homepage_layout_3.png
+Role: Homepage variant — alternate section library
+Components / content to build: Clean header emphasising contact details; full-width dental-care hero; Top Categories 2-row image grid; Top Picks grid with inventory-availability bars; triple horizontal banners; Featured Products with right vertical promo banner; countdown deal bar; two-column featured deal ('Vitamin Packs') beside product cards; 2×2 blog grid; partner logos.
+Reusable patterns & tokens: Inventory/stock-level bar on product cards (useful for pharmacy stock urgency); Two-column deal + products composite section
+Responsive notes: 2-row category grid paginates or collapses; deal composite stacks.
+Depends on: Section library only
+04_homepage_layout_4.png
+Role: Homepage variant — alternate section library
+Components / content to build: 'All Category' selector header; asymmetric 4-block hero; Top Picks with left promo; circular category grid with discount badge; tabbed product showcase ('New Innovations' / 'Bundle & Save' / 'Eofy Sale!'); 3 promo banners; multi-column products with centered featured card; 'What Customers Are Saying' testimonial carousel; blog (large card + stacked); full-width lifestyle banner.
+Reusable patterns & tokens: Tabbed product showcase — reuse wherever product groups need tabs; Testimonial carousel with ratings (unique to this layout, reuse on About 29)
+Responsive notes: Tabs scroll horizontally; testimonial carousel swipe; hero blocks stack.
+Depends on: Section library only
+05_homepage_layout_5.png
+Role: Homepage variant — alternate section library
+Components / content to build: Capsule/supplement hero slider; 4-column service perks bar (14-Day Returns, Free Shipping, 24/7 Support, Member Discounts); 'Top Picks This Week' 2-row grid; dual mid-page promo banners; remaining sections follow the shared section-stack pattern.
+Reusable patterns & tokens: Perks bar variant — good default service-bar copy for a pharmacy; Two-row dense product grid
+Responsive notes: Perks bar 4 → 2×2; grids stack.
+Depends on: Section library only
+06_shop_grid_sidebar_filters.png
+Role: Catalog — default shop / category page (grid)
+Components / content to build: Main product listing. Breadcrumb ('Home > Shops > Stomach & gut relief') + H1; left sidebar filters (category checklist, dual-handle price slider, availability with counts, brand checklist); toolbar with view switcher (list / 3-col active / 4-col), 'Best Selling' sort dropdown, active filter pills + Clear All; 3-column product grid with full badge set and hover actions; pagination; trust bar; footer.
+Reusable patterns & tokens: THE reference screen for the product card and catalog toolbar; Sidebar filter panel (filters identical to drawer 09); Filter-pill + Clear All state management
+Responsive notes: Sidebar becomes the drawer from 09 under ~992 px; toolbar sticks; grid 3 → 2 → 1.
+Depends on: 09_filter_drawer.jpg (mobile state of the same filters); 11_quick_view_drawer.jpg (hover eye); 13_cart_drawer.jpg (Add to Cart feedback)
+07_shop_grid_category_badges.png
+Role: Catalog — category page with subcategory badges
+Components / content to build: Same catalog as 06 but headed by a circular subcategory badge carousel (Pain Relief, Cold & Flu, Blood Pressure, Supplements… each with product counts, one badge highlighted 'Best Sellers 15% OFF'); 4-column compact grid active in the toolbar.
+Reusable patterns & tokens: Subcategory badge carousel — place on top-level category pages; 4-column compact card variant; Count + promo highlight treatment on badges
+Responsive notes: Badge carousel scrolls horizontally; 4-col → 2-col grid.
+Depends on: 06 (same page, different view/tab); 09
+08_shop_list_view.png
+Role: Catalog — list view (filter canvas closed state)
+Components / content to build: Same category page in LIST view: wide horizontal cards with product thumbnail, benefit bullet list ('Supports a calm and balanced mood'…), quantity stepper inline, full-width Add to Cart, Compare / Share buttons; toolbar shows 'Show Filters' toggle (canvas closed) — this is the documentation for the collapsed-filter state.
+Reusable patterns & tokens: Horizontal list-view product card (distils more info per row — good for medicine where dosage/permissions matter); Show Filters toggle = trigger for drawer 09; Inline qty stepper in a listing card
+Responsive notes: List cards keep single column on mobile; thumbnail shrinks left, actions move below.
+Depends on: 09 (opened state); 06 (same data)
+09_filter_drawer.jpg
+Role: Catalog — off-canvas filter drawer
+Components / content to build: Left slide-in 'Filters' drawer over a category page: category selection, price range slider, colour swatches, availability, brand checkboxes. This is the mobile/compact-state surface for the sidebar in 06.
+Reusable patterns & tokens: One filter panel component rendered as sidebar (desktop) or drawer (mobile); Apply/see-results pattern
+Responsive notes: Native drawer behaviour under ~992 px; full-screen sheet on small phones.
+Depends on: 06 (desktop sibling); 08 (trigger)
+10_product_detail.png
+Role: Product detail page (PDP)
+Components / content to build: The conversion heart. Left: image gallery with 4 thumbnails. Right: category tag, Rx / Temp-Controlled badges, title, star rating, live social proof ('5 sold in last 2 hours', '35 people viewing right now'), sale price $49.99 + strike $59.99 + -17% tag, spec list (Stock, Expiry Date, Medicine Type, Salt/Composition, Manufacturer), purchase-type radio ('One-Time Purchase' vs 'Subscribe & Save' with 'Save up to 15%'), qty stepper, Add to Cart, red Buy It Now, wishlist/compare/ask/share, zip-code delivery checker, trust icon box. Below: 7 tabs (Description, Uses & Benefits, Dosage, Side Effects, Safety Advice, Reviews (3), Shipping & Returns), 'Substitute Medicines' cross-sell carousel, Related / Recently Viewed tabs.
+Reusable patterns & tokens: Pharmacy-specific spec panel + mandatory disclaimer callout in Description tab; Subscription upsell radio (feeds 19 account subscriptions); Cross-sell carousels ('Quick Add' buttons); Social-proof components
+Responsive notes: Gallery becomes swipe carousel with dots; info panel stacks below; tabs become accordions.
+Depends on: 11 (quick view shares info design); 12 (Add to Cart); 19 (Subscribe & Save); 14 (Rx products route here from checkout)
+11_quick_view_drawer.jpg
+Role: Catalog — product quick-view drawer
+Components / content to build: Right-side panel from a product card's hover 'eye': gallery, rating, price, size options, qty, Add to Cart / Buy It Now for 'Gaia Herbs Relax Gummies'. Lets shoppers buy without leaving the listing.
+Reusable patterns & tokens: Condensed PDP: reuse PDP info blocks in compact form; Drawer chrome shared with 13
+Responsive notes: Full-screen sheet on mobile, where it effectively becomes the PDP summary.
+Depends on: 10 (full PDP link 'view details'); 06/07/08 (triggering cards)
+12_cart_page.png
+Role: Cart — full page
+Components / content to build: Cart table with TWO sections: regular items and a 'Prescription Products' header group (Rx-badged lines for Relax Gummies and Turmeric Supreme, each with subscription/supply detail); qty steppers, remove ×; coupon input + Apply Coupon. Right column: free-shipping progress bar ('Buy $90.03 more to get Free Shipping'), subtotal, shipping with 'Change address' expander, highlighted total, purple 'Proceed To Checkout'.
+Reusable patterns & tokens: Rx item grouping inside the cart — legally/commercially important for this store; Free-shipping progress bar (also in 13); Coupon component shared with 14's coupon banner
+Responsive notes: Table collapses to stacked item cards; summary moves above items on mobile.
+Depends on: 13 (mini version); 14 (next step); 10 (subscription lines originate here)
+13_cart_drawer.jpg
+Role: Cart — slide-out mini cart
+Components / content to build: Right drawer on Add to Cart: free-shipping progress bar, line items with qty steppers, tabs for order notes / shipping, subtotal, terms checkbox, View Cart + Check Out buttons.
+Reusable patterns & tokens: Confirmation surface after every Add to Cart; Terms-acceptance before checkout (compliance-relevant)
+Responsive notes: Full-screen sheet on mobile.
+Depends on: 12 (View Cart target); 14 (Check Out target)
+14_checkout_billing_payment.png
+Role: Checkout — billing, Rx upload & payment
+Components / content to build: Two-column checkout. Left: Billing Details form. Right: 'Prescription Upload' module with EMPTY drag-and-drop state, above 'Your Order' summary ($109.97) listing payment radios — Direct bank transfer, Check payments, Cash on delivery — and 'Place Order'. Coupon prompt banner and breadcrumbs above. The captured sibling state (uploaded file with green check + 'Remove & Replace') was deduplicated; build both states of the upload module.
+Reusable patterns & tokens: Prescription upload module with empty + filled states (filled state: green check, filename, remove control); Payment method radio group (add gateway-specific fields per method); Order review box
+Responsive notes: Columns stack with order summary collapsed into an accordion on mobile.
+Depends on: 12/13 (arrive here); 15/16 (Rx rules); 10 (Rx items flagged)
+15_prescription_order_login.png
+Role: Prescription flow — login gate
+Components / content to build: 'Order Via Prescription' page when logged out: breadcrumbs, centered 'Login Required' card with lock icon and Login/Register button, trust icon bar, footer. Branch point: the Rx path demands an account before upload.
+Reusable patterns & tokens: Auth-gate card pattern — reuse for any members-only page (e.g. member pricing); Login/Register button must deep-link back to this page after auth
+Responsive notes: Card is naturally responsive.
+Depends on: 21/22 (the auth modals it opens); 16 (post-login destination)
+16_prescription_upload_form.png
+Role: Prescription flow — upload & order form
+Components / content to build: Logged-in Rx order page: Full Name, Phone Number, drag-and-drop prescription file box, 'Upload & Order' CTA. The alternative entry to normal checkout for Rx purchases.
+Reusable patterns & tokens: Drag-&-drop uploader with validation (file type/size) and preview; Same uploader component reused inside checkout 14
+Responsive notes: Drop zone grows to full width on mobile.
+Depends on: 15 (gate); 14 (checkout alternative); 18 (result appears in Prescription Orders)
+17_account_orders.png
+Role: Account — order history
+Components / content to build: My Account > Orders: left account sidebar (Orders active), table of orders #436/#426/#418 with Date, Status, Total and row actions View / Pay / Cancel. Pay appears only for unpaid orders — status-driven action rendering.
+Reusable patterns & tokens: Account shell (sidebar + content) shared by 17–20; Orders table: status badges + conditional row actions
+Responsive notes: Table becomes stacked cards with the key data as labels; sidebar becomes top tab bar or dropdown.
+Depends on: 20 (history modal pattern); 14 (orders created here)
+18_account_prescription_orders.png
+Role: Account — prescription order requests
+Components / content to build: My Account > Prescription Orders: Request IDs #417/#416, Date, Status (Pending / Converted), actions 'View File' (opens the uploaded Rx document) and 'View Order' (jumps to the converted shop order). Distinct lifecycle from normal orders.
+Reusable patterns & tokens: Rx request table with document preview action; Pending → Converted status mapping to 17's regular orders
+Responsive notes: Same card-collapse treatment as 17.
+Depends on: 16 (submissions land here); 17 (converted order)
+19_account_subscriptions.png
+Role: Account — medicine subscription management
+Components / content to build: My Account > Medicine Subscriptions: table of recurring items with delivery-interval dropdown, quantity, recurring price, next renewal date, status tags ACTIVE / PAUSED, and actions Pause / Resume / Cancel / History.
+Reusable patterns & tokens: Self-service subscription controls — pairs with PDP 'Subscribe & Save'; Inline interval editor + status tag system
+Responsive notes: Each subscription becomes an expandable card on mobile.
+Depends on: 10 (opt-in point); 20 (History action opens the modal)
+20_subscription_history_modal.png
+Role: Account — subscription order history modal
+Components / content to build: Dimmed 19 background with modal 'Subscription Order History' (e.g. Order #426 Initial — Completed). Shows the renewal chain of one subscription.
+Reusable patterns & tokens: Modal over account page (shared modal chrome with 21/22); Timeline/list of renewal orders linking into 17
+Responsive notes: Modal becomes full-screen sheet on mobile.
+Depends on: 19 (History action); 17 (order records)
+21_sign_in.jpg
+Role: Auth — sign-in modal
+Components / content to build: Centered modal: username/email, password, Remember me, Forgot Password, Login, Create Account switch. Opened from the header account link and from gate 15.
+Reusable patterns & tokens: Modal chrome (shared with 22/20); Return-to-previous-page behaviour after login
+Responsive notes: Modal becomes full-screen sheet on mobile.
+Depends on: 22 (toggle); 15 (gate context); 17–20 (post-login destination)
+22_register.jpg
+Role: Auth — registration modal
+Components / content to build: Centered modal: username/email, password, confirm password, Create Account, Login switch. Three fields only — keep signup friction minimal.
+Reusable patterns & tokens: Same modal chrome; field validation states
+Responsive notes: Same sheet treatment as 21.
+Depends on: 21 (toggle); 15
+23_search_overlay.jpg
+Role: Global — search overlay
+Components / content to build: Full-width search modal: prominent input, 'Feature Keywords Today' tag chips, 'Recently Viewed Products' carousel. The primary discovery shortcut.
+Reusable patterns & tokens: Predictive/keyword search pattern; editable keyword chips in CMS; Recently-viewed carousel (also tabbed on PDP 10)
+Responsive notes: Overlay becomes a top sheet; recently-viewed scrolls.
+Depends on: Header search on all pages; 10 (shared carousel)
+24_newsletter_popup.jpg
+Role: Marketing — newsletter popup
+Components / content to build: 'Subscribe & Enjoy 10% OFF' modal with product imagery and email field. Classic exit/first-visit incentive; drive signups to the footer newsletter too.
+Reusable patterns & tokens: Email capture + coupon-issuing flow (hook to your ESP); Frequency-capping rules (once per visitor per N days)
+Responsive notes: Modal scales down; full-screen on small phones.
+Depends on: Footer newsletter form; 21/22 modal chrome
+25_megamenu_hover.jpg
+Role: Navigation — full-width mega menu (hover)
+Components / content to build: Hover state on the top nav opening a full-width mega menu with six detailed medical subcategory columns. Documents desktop nav behaviour for the pharmacy taxonomy.
+Reusable patterns & tokens: Mega menu grid: 6 columns, column titles + links; define hover/focus and keyboard access; This is the main taxonomy surface — populate from your real category tree
+Responsive notes: Menu becomes an accordion inside the mobile drawer.
+Depends on: 26 (sidebar alternative); 06/07 (target category pages)
+26_category_flyout_hover.jpg
+Role: Navigation — sidebar category flyout (hover)
+Components / content to build: Hover on 'Pharmacy Medicines' in a left sidebar category list opens a multi-column compact flyout. Used on layouts with the category rail (homepage 01) or as a secondary nav.
+Reusable patterns & tokens: Flyout panel pattern; two-level category navigation
+Responsive notes: Flyout becomes nested accordions on touch.
+Depends on: 25 (top-nav variant); 01 (rail host)
+27_blog_list.png
+Role: Content — blog listing
+Components / content to build: Blog feed: featured article cards with thumbnails, categories, dates, excerpts, pagination; sidebar with search, Categories (with counts), Recent Posts, Popular Tags. Brand-trust content that also feeds SEO.
+Reusable patterns & tokens: Article card component (reuse card anatomy); Blog sidebar widgets
+Responsive notes: Sidebar drops below the feed; grid 2 → 1 columns.
+Depends on: 28 (article); Footer links
+28_blog_single.png
+Role: Content — blog article
+Components / content to build: Single post: title + meta, hero image, formatted body with pull quote and gallery, tags, social share, prev/next navigation, comments/reviews list + 'Write a review' form, 'Health Insights & Wellness Tips' related grid.
+Reusable patterns & tokens: Rich article typography; comment/review form (moderate before publish); Related-articles grid
+Responsive notes: Single column throughout; sticky share becomes inline.
+Depends on: 27 (listing); 10 (related-products pattern)
+29_about_us.png
+Role: Content — About Us
+Components / content to build: Mission intro block, three-pillar feature cards ('Effective And Reliable Protection'), stats counters (years, clients, branches), partner logo cloud ('Join Over 100 Growing Store Branches'), FAQ accordion preview, testimonial slider.
+Reusable patterns & tokens: Stats counters; logo cloud (same data as homepage 02); FAQ accordion preview reuses 31's accordion
+Responsive notes: Pillars stack; counters 4 → 2×2.
+Depends on: 31 (accordion component); 04 (testimonial carousel)
+30_contact_us.png
+Role: Content — Contact Us
+Components / content to build: Contact info card (Phone, Email, Address, Operating Hours) beside an embedded map; 'Get In Touch' form (Name, Email, Message, Send).
+Reusable patterns & tokens: Info card + map embed; standard form validation; Wire form to a support inbox / ticketing
+Responsive notes: Map stacks above the form on mobile.
+Depends on: Footer contact data must match; 31 (support topics)
+31_faqs.png
+Role: Content — FAQs
+Components / content to build: Categorized FAQ accordions: 'Product & Ingredients', 'Usage & Directions', 'Shipping, Returns & Support'; sticky right sidebar 'Ask Your Question' quick form.
+Reusable patterns & tokens: Accordion component (shared with 29's preview); Escalation path from FAQ to contact form
+Responsive notes: Sidebar stacks below; accordions full-width.
+Depends on: 30 (form handoff); 29 (shared accordion)
+32_privacy_policy.png
+Role: Content — Privacy Policy / Terms
+Components / content to build: Legal template: left index sidebar (Terms, Limitations, Revisions and errata, Site terms of use, Risks) + main clause text. Also the template for Returns, Shipping and any Rx/telehealth consent policies this store requires.
+Reusable patterns & tokens: Sticky in-page TOC with scroll-spy; One legal-template component for all policy pages
+Responsive notes: TOC becomes a collapsible 'On this page' dropdown.
+Depends on: Footer legal links; 13 (terms checkbox should link here)
+4. Recommended Build Order
+1. Tokens & shared library — colours, badges, product card, qty stepper, trust bar, footer, header, breadcrumb header (from 06/10).
+2. Navigation states — mega menu (25) and category flyout (26); mobile drawer accordion.
+3. Auth — modals 21/22 and the login gate 15.
+4. Catalog — 06 grid + 08 list + 07 badges; filter panel as sidebar/drawer (09); toolbar with pills, sort, view switcher, pagination.
+5. Product — PDP 10 with tabs, subscription radio and cross-sell; quick view 11.
+6. Purchase — cart page 12, mini-cart drawer 13, checkout 14 (both Rx-upload states).
+7. Prescription path — uploader 16 and its landing in account 18.
+8. Account — shell + orders 17, subscriptions 19 + history modal 20.
+9. Content & marketing — blog 27/28, about 29, contact 30, FAQs 31, legal 32, search overlay 23, newsletter popup 24.
+10. Homepage — assemble 01 last so every section it references already exists; borrow modules from 02–05 as needed.
+5. Gaps — What the Kit Does NOT Cover (design separately)
+•	Mobile & tablet designs: only 1920 px desktop is captured; define all responsive behaviour yourself.
+•	Homepage variants: build one (recommended 01); 02–05 are reference libraries, not separate pages.
+•	Checkout 'uploaded prescription' visual state was deduplicated out — rebuild the filled state from section 14's description.
+•	Missing pages: order-success/thank-you, 404, search-results page, product compare, account dashboard home, wishlist page, order-tracking detail.
+•	Missing states: empty cart, empty order history, validation errors, sold-out products, logged-out account access.
+•	Email templates (order confirmation, Rx approval, subscription reminders) and transactional SMS.
+•	Design-token / style-guide file: extract exact hex values, type scale and spacing from the PNGs during build.
+•	Localisation & accessibility passes (contrast, focus states, aria for drawers/modals/tabs) and Rx-compliance review for your market.
