@@ -52,6 +52,7 @@ export default function ProductCard({
     const defaultVar = getDefaultProductVariant(product);
     addToCart({
       productId: product.id,
+      shopifyVariantId: defaultVar?.shopifyVariantId,
       slug: product.slug,
       name: product.name,
       image: product.image,

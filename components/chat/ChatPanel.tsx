@@ -20,6 +20,7 @@ import {
 } from '@/components/ai-elements/prompt-input';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { Suggestion, Suggestions as QuickReplies } from '@/components/ai-elements/suggestion';
+import { useStore } from '@/context/StoreContext';
 import { searchCatalog } from '@/lib/chat/catalog';
 import type { ChatUIMessage } from '@/lib/chat/tools';
 import { renderPart } from './MessageParts';
@@ -61,6 +62,7 @@ const isGridToolPart = (part: ChatUIMessage['parts'][number]) =>
   part.type === 'tool-searchProducts' || part.type === 'tool-compareProducts';
 
 export function ChatPanel({ onClose }: { onClose: () => void }) {
+  const { products, settings } = useStore();
   const runCartTool = useCartToolRunner();
   const [transport] = useState(
     () =>
@@ -79,7 +81,7 @@ export function ChatPanel({ onClose }: { onClose: () => void }) {
 
   /** Zero-token chip: answer "bestsellers" locally by injecting a synthetic tool result. */
   const showBestsellers = () => {
-    const out = searchCatalog({ inStockOnly: true, limit: 4 });
+    const out = searchCatalog({ inStockOnly: true, limit: 4 }, products);
     setMessages((prev) => [
       ...prev,
       {
@@ -232,7 +234,7 @@ export function ChatPanel({ onClose }: { onClose: () => void }) {
           <PromptInputTextarea placeholder="Ask about a product…" maxLength={600} />
           <PromptInputFooter>
             <span className="text-[10px] text-slate-400">
-              Emergency? Call 911 · Pharmacist: (+01) 1234 8888
+              Emergency? Call 1122 / 911 · Pharmacist: {settings.phone}
             </span>
             <PromptInputSubmit status={status} onStop={stop} />
           </PromptInputFooter>

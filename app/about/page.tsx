@@ -11,12 +11,13 @@ import {
   Pill,
   Star,
 } from 'lucide-react';
-import { FAQ_CATEGORIES, PARTNER_BRANDS, TESTIMONIALS } from '@/lib/data';
+import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function AboutPage() {
+  const { faqCategories, testimonials, settings } = useStore();
   const [openFaqIdx, setOpenFaqIdx] = useState<number>(1);
-  const previewFaqs = FAQ_CATEGORIES[0].items;
+  const previewFaqs = faqCategories[0]?.items ?? [];
 
   return (
     <div className="bg-white">
@@ -31,7 +32,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6">
             <img
-              src="/images/pages/about-pills.png"
+              src={settings.aboutImage}
               alt="Pharmaceutical capsules and tablets"
               className="w-full rounded-2xl object-cover shadow-xs"
             />
@@ -144,7 +145,7 @@ export default function AboutPage() {
           Join Over 100 Growing Store Branches
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-          {PARTNER_BRANDS.map((brand) => (
+          {settings.partnerBrands.map((brand) => (
             <div
               key={brand}
               className="bg-[#F8F9FC] rounded-xl py-4 px-3 text-center text-sm font-bold text-slate-400"
@@ -204,7 +205,7 @@ export default function AboutPage() {
             <p className="text-xs font-bold text-[#082A66]">★★★★★ 4.70 out of 5 (425 reviews)</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TESTIMONIALS.map((t) => (
+            {testimonials.map((t) => (
               <div key={t.id} className="bg-white border border-slate-200 rounded-2xl p-5">
                 <div className="flex items-center text-[#082A66] mb-3">
                   {Array.from({ length: t.rating }).map((_, i) => (

@@ -16,7 +16,17 @@ export function useCartToolRunner(): (
   toolCall: Parameters<ChatOnToolCallCallback<ChatUIMessage>>[0]['toolCall'],
   addToolOutput: AddToolOutput
 ) => void {
-  const { cart, couponCode, addToCart, updateCartQty, removeFromCart, applyCoupon } = useStore();
+  const {
+    products,
+    coupons,
+    settings,
+    cart,
+    couponCode,
+    addToCart,
+    updateCartQty,
+    removeFromCart,
+    applyCoupon,
+  } = useStore();
 
   // State updates are async, so two tool calls in one step must see each other's changes: mirror in a ref.
   const cartRef = useRef<CartItem[]>(cart);
@@ -30,12 +40,19 @@ export function useCartToolRunner(): (
     (toolCall, addToolOutput) => {
       if (toolCall.dynamic) return;
       const id = toolCall.toolCallId;
-      const snap = () => snapshotCart(cartRef.current, couponRef.current);
+      const snap = () =>
+        snapshotCart(
+          cartRef.current,
+          couponRef.current,
+          coupons,
+          settings.freeShippingThreshold,
+          settings.standardShippingFee
+        );
 
       try {
         switch (toolCall.toolName) {
           case 'addToCart': {
-            const built = buildCartLine(toolCall.input);
+            const built = buildCartLine(toolCall.input, products);
             if (!built.ok) {
               addToolOutput({
                 tool: 'addToCart',
@@ -116,6 +133,15 @@ export function useCartToolRunner(): (
         });
       }
     },
-    [addToCart, updateCartQty, removeFromCart, applyCoupon]
+    [
+      products,
+      coupons,
+      settings.freeShippingThreshold,
+      settings.standardShippingFee,
+      addToCart,
+      updateCartQty,
+      removeFromCart,
+      applyCoupon,
+    ]
   );
 }

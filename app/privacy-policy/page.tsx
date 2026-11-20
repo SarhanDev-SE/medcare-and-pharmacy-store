@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 const LEGAL_SECTIONS = [
@@ -12,6 +13,7 @@ const LEGAL_SECTIONS = [
 ];
 
 export default function PrivacyPolicyPage() {
+  const { settings } = useStore();
   const [activeId, setActiveId] = useState<string>('terms');
 
   useEffect(() => {
@@ -138,7 +140,7 @@ export default function PrivacyPolicyPage() {
                   Session and cart preferences remain locally preserved so returning customers can review pending prescription uploads without losing items.
                 </li>
                 <li>
-                  Account holders may request export or permanent deletion of stored non-statutory account records via our Privacy Desk at info@xmedcar.com.
+                  Account holders may request export or permanent deletion of stored non-statutory account records via our Privacy Desk at {settings.email}.
                 </li>
               </ul>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -152,7 +154,7 @@ export default function PrivacyPolicyPage() {
                 Herbal extracts, concentrated fat-soluble vitamins, and over-the-counter therapeutics carry biological activity and may interact with prescription anticoagulants, antihypertensives, immunosuppressants, or endocrine medications.
               </p>
               <p className="text-sm leading-relaxed text-slate-600">
-                If you experience an adverse reaction, rash, dizziness, or unexpected symptom after taking any product purchased from Xmedcar, discontinue use immediately and contact your physician or emergency medical services. Non-urgent clinical questions can be directed 24/7 to our licensed pharmacist desk at (+01) 1234 8888.
+                If you experience an adverse reaction, rash, dizziness, or unexpected symptom after taking any product purchased from Xmedcar, discontinue use immediately and contact your physician or emergency medical services. Non-urgent clinical questions can be directed 24/7 to our licensed pharmacist desk at {settings.phone}.
               </p>
             </section>
           </article>

@@ -1,5 +1,5 @@
 import { PRODUCTS } from '@/lib/data';
-import { getDefaultProductVariant, getSubscriptionPrice } from '@/lib/store-logic';
+import { getDefaultProductVariant, getSubscriptionPrice, usdToPkr } from '@/lib/store-logic';
 import type { CartItem, Product, ProductVariant } from '@/lib/types';
 
 export interface ProductCardData {
@@ -20,11 +20,23 @@ export interface ProductCardData {
   medicineType: string;
   subscriptionEligible: boolean;
   defaultVariantId: string;
-  variants: Pick<ProductVariant, 'id' | 'label' | 'price'>[];
+  variants: Pick<ProductVariant, 'id' | 'shopifyVariantId' | 'label' | 'price'>[];
   highlights: string[];
 }
 
-export const getProduct = (id: string) => PRODUCTS.find((p) => p.id === id);
+export const FALLBACK_PKR_PRODUCTS: Product[] = PRODUCTS.map((p) => ({
+  ...p,
+  price: usdToPkr(p.price),
+  ...(p.originalPrice ? { originalPrice: usdToPkr(p.originalPrice) } : {}),
+  variants: p.variants.map((v) => ({
+    ...v,
+    price: usdToPkr(v.price),
+    ...(v.originalPrice ? { originalPrice: usdToPkr(v.originalPrice) } : {}),
+  })),
+}));
+
+export const getProduct = (id: string, catalog: Product[] = FALLBACK_PKR_PRODUCTS) =>
+  catalog.find((p) => p.id === id);
 
 /** The variant that product.price refers to (variants[0] is NOT always it). */
 export const defaultVariant = (p: Product): ProductVariant => getDefaultProductVariant(p);
@@ -49,15 +61,20 @@ export function toCard(p: Product): ProductCardData {
     medicineType: p.medicineType,
     subscriptionEligible: p.subscriptionEligible,
     defaultVariantId: dv.id,
-    variants: p.variants.map(({ id, label, price }) => ({ id, label, price })),
+    variants: p.variants.map(({ id, shopifyVariantId, label, price }) => ({
+      id,
+      shopifyVariantId,
+      label,
+      price,
+    })),
     highlights: p.benefits.slice(0, 2),
   };
 }
 
 /** ~35 tokens per product instead of ~740 for the raw record. This is what the MODEL sees. */
 export const toSlimLine = (c: ProductCardData) =>
-  `${c.id}|${c.name}|$${c.price}|${c.rating}★|${c.isRx ? 'Rx' : 'OTC'}|` +
-  `${c.inStock ? 'in stock' : 'OUT OF STOCK'}|variants:${c.variants.map((v) => `${v.id}=$${v.price}`).join(',')}`;
+  `${c.id}|${c.name}|Rs. ${c.price}|${c.rating}★|${c.isRx ? 'Rx' : 'OTC'}|` +
+  `${c.inStock ? 'in stock' : 'OUT OF STOCK'}|variants:${c.variants.map((v) => `${v.id}=Rs.${v.price}`).join(',')}`;
 
 /* ---------- search ---------- */
 const STOP = new Set([
@@ -112,21 +129,24 @@ export interface SearchArgs {
   limit?: number;
 }
 
-export function searchCatalog({
-  query = '',
-  category,
-  maxPrice,
-  rx = 'any',
-  inStockOnly = false,
-  limit = 4,
-}: SearchArgs) {
+export function searchCatalog(
+  {
+    query = '',
+    category,
+    maxPrice,
+    rx = 'any',
+    inStockOnly = false,
+    limit = 4,
+  }: SearchArgs,
+  catalog: Product[] = FALLBACK_PKR_PRODUCTS
+) {
   const q = norm(query);
   const terms = q
     .split(' ')
     .filter((t) => (t.length >= 2 && !STOP.has(t)) || /^[a-z]\d+$/.test(t));
   const synonyms = [...new Set(terms.flatMap((t) => SYNONYMS[t] ?? []))];
 
-  const scored = PRODUCTS
+  const scored = catalog
     .filter(
       (p) =>
         !category ||
@@ -152,14 +172,17 @@ export type BuildLineResult =
   | { ok: true; line: Omit<CartItem, 'id'> }
   | { ok: false; reason: string };
 
-export function buildCartLine(args: {
-  productId: string;
-  variantId?: string;
-  quantity: number;
-  purchaseMode: 'one-time' | 'subscription';
-  intervalDays?: 30 | 60 | 90;
-}): BuildLineResult {
-  const p = getProduct(args.productId);
+export function buildCartLine(
+  args: {
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    purchaseMode: 'one-time' | 'subscription';
+    intervalDays?: 30 | 60 | 90;
+  },
+  catalog: Product[] = FALLBACK_PKR_PRODUCTS
+): BuildLineResult {
+  const p = getProduct(args.productId, catalog);
   if (!p) return { ok: false, reason: 'Unknown product.' };
   if (!p.inStock) return { ok: false, reason: `${p.name} is out of stock.` };
   const max = Math.min(10, p.stockCount);
@@ -182,6 +205,7 @@ export function buildCartLine(args: {
     ok: true,
     line: {
       productId: p.id,
+      shopifyVariantId: v.shopifyVariantId,
       slug: p.slug,
       name: p.name,
       image: p.image,

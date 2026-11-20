@@ -3,11 +3,10 @@
 import React, { useState } from 'react';
 import { ChevronDown, CheckCircle2 } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { FAQ_CATEGORIES } from '@/lib/data';
 import { useStore } from '@/context/StoreContext';
 
 export default function FaqsPage() {
-  const { showToast } = useStore();
+  const { faqCategories, showToast } = useStore();
   const [openKey, setOpenKey] = useState<string | null>('0-0');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,7 +48,7 @@ export default function FaqsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left 3 Categorized Accordions */}
           <div className="lg:col-span-8 space-y-10">
-            {FAQ_CATEGORIES.map((group, groupIdx) => (
+            {faqCategories.map((group, groupIdx) => (
               <section key={group.category} aria-labelledby={`faq-cat-${groupIdx}`}>
                 <h2
                   id={`faq-cat-${groupIdx}`}

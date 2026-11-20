@@ -10,11 +10,11 @@ import {
   PackageCheck,
   ShieldCheck,
 } from 'lucide-react';
-import { STORE_INFO } from '@/lib/data';
+import { formatMoney } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
 
 export default function Footer() {
-  const { showToast, applyCoupon } = useStore();
+  const { settings, currency, showToast, applyCoupon } = useStore();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -25,8 +25,8 @@ export default function Footer() {
       return;
     }
     setSubscribed(true);
-    applyCoupon('FIRST10');
-    showToast('Subscribed! Code FIRST10 (10% Off) applied to your cart.');
+    applyCoupon(settings.promoCode);
+    showToast(`Subscribed! Code ${settings.promoCode} applied to your cart.`);
     setEmail('');
   };
 
@@ -45,7 +45,9 @@ export default function Footer() {
           </div>
           <div className="flex flex-col items-center text-center gap-2">
             <PackageCheck className="w-7 h-7 text-[#7B3CA1]" strokeWidth={1.6} aria-hidden="true" />
-            <p className="text-sm font-bold text-[#082A66]">Free Shipping over $20</p>
+            <p className="text-sm font-bold text-[#082A66]">
+              Free Shipping over {formatMoney(settings.freeShippingThreshold, currency)}
+            </p>
           </div>
           <div className="flex flex-col items-center text-center gap-2">
             <ShieldCheck className="w-7 h-7 text-[#7B3CA1]" strokeWidth={1.6} aria-hidden="true" />
@@ -60,12 +62,12 @@ export default function Footer() {
           {/* Brand Contact Info */}
           <div className="lg:col-span-4 space-y-3">
             <Link href="/" className="text-2xl font-bold tracking-tight text-white inline-block">
-              Xmedcar
+              {settings.brandName}
             </Link>
             <p className="text-xs text-white/75">24/7 Support Center:</p>
-            <p className="text-lg font-bold text-white tabular-nums">{STORE_INFO.phone}</p>
-            <p className="text-xs text-white/75">{STORE_INFO.address}</p>
-            <p className="text-xs text-white/75">{STORE_INFO.email}</p>
+            <p className="text-lg font-bold text-white tabular-nums">{settings.phone}</p>
+            <p className="text-xs text-white/75">{settings.address}</p>
+            <p className="text-xs text-white/75">{settings.email}</p>
           </div>
 
           {/* Company Column */}
@@ -160,7 +162,7 @@ export default function Footer() {
             </form>
             {subscribed && (
               <p className="mt-2 text-xs text-emerald-300">
-                Code <span className="font-mono font-bold">FIRST10</span> activated for 10% off.
+                Code <span className="font-mono font-bold">{settings.promoCode}</span> activated for 10% off.
               </p>
             )}
           </div>

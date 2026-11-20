@@ -3,7 +3,6 @@
 import React, { use, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Quote, Share2, Star } from 'lucide-react';
-import { BLOG_POSTS } from '@/lib/data';
 import { useStore } from '@/context/StoreContext';
 
 export default function BlogSinglePage({
@@ -12,17 +11,17 @@ export default function BlogSinglePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const { showToast } = useStore();
+  const { blogs, showToast } = useStore();
 
   const currentIdx = Math.max(
     0,
-    BLOG_POSTS.findIndex((p) => p.slug === slug)
+    blogs.findIndex((p) => p.slug === slug)
   );
-  const post = BLOG_POSTS[currentIdx] ?? BLOG_POSTS[0];
-  const prevPost = BLOG_POSTS[(currentIdx - 1 + BLOG_POSTS.length) % BLOG_POSTS.length];
-  const nextPost = BLOG_POSTS[(currentIdx + 1) % BLOG_POSTS.length];
+  const post = blogs[currentIdx] ?? blogs[0];
+  const prevPost = blogs[(currentIdx - 1 + blogs.length) % blogs.length];
+  const nextPost = blogs[(currentIdx + 1) % blogs.length];
 
-  const [reviews, setReviews] = useState(post.reviews);
+  const [reviews, setReviews] = useState(post?.reviews ?? []);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [comment, setComment] = useState('');
@@ -268,7 +267,7 @@ export default function BlogSinglePage({
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {BLOG_POSTS.filter((p) => p.id !== post.id)
+          {blogs.filter((p) => p.id !== post.id)
             .slice(0, 3)
             .map((rel) => (
               <Link key={rel.id} href={`/blog/${rel.slug}`} className="group block">

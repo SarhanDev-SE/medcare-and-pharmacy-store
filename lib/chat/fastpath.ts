@@ -1,14 +1,20 @@
-import { FAQ_CATEGORIES, STORE_INFO } from '@/lib/data';
+import { FAQ_CATEGORIES } from '@/lib/data';
+import type { FaqCategory, StoreSettings } from '@/lib/types';
 
 const GREETING =
   /^\s*(hi|hello|hey|salam|assalam[a-z ]*|good (morning|afternoon|evening)|thanks?|thank you)\b[\s!.?]*$/i;
 const EMERGENCY =
   /\b(chest pain|can'?t breathe|cannot breathe|trouble breathing|overdos\w*|suicid\w*|kill myself|anaphyla\w*|severe allergic|stroke|seizure|unconscious|poison\w*)\b/i;
 
-export const EMERGENCY_REPLY =
-  'This sounds urgent. **Please call 911 (or your local emergency number) now.** ' +
-  'If you are thinking about harming yourself, call or text **988** (US Suicide & Crisis Lifeline). ' +
-  `Once you are safe, our pharmacists can help with medicines: ${STORE_INFO.phone}.`;
+export function getEmergencyReply(phone = '+92 21 111 963 322'): string {
+  return (
+    'This sounds urgent. **Please call emergency services (1122 / 911 or your local emergency number) now.** ' +
+    'If you are thinking about harming yourself, seek urgent medical care or call your national crisis helpline immediately. ' +
+    `Once you are safe, our pharmacists can help with medicines: ${phone}.`
+  );
+}
+
+export const EMERGENCY_REPLY = getEmergencyReply();
 
 export const GREETING_REPLY =
   'Hi! I can help you find products, check details, and add things to your cart. What do you need today?';
@@ -31,15 +37,20 @@ const content = (s: string) =>
       .map(stem)
   );
 
-const FAQ_INDEX = FAQ_CATEGORIES.flatMap((c) => c.items).map((i) => ({
-  a: i.a,
-  t: content(i.q),
-}));
+function buildFaqIndex(faqCategories: FaqCategory[]) {
+  return faqCategories.flatMap((c) => c.items).map((i) => ({
+    a: i.a,
+    t: content(i.q),
+  }));
+}
 
-export function matchFaq(text: string): string | null {
+export function matchFaq(
+  text: string,
+  faqCategories: FaqCategory[] = FAQ_CATEGORIES
+): string | null {
   const q = content(text);
   let best: { a: string; score: number } | null = null;
-  for (const item of FAQ_INDEX) {
+  for (const item of buildFaqIndex(faqCategories)) {
     let hit = 0;
     for (const w of item.t) if (q.has(w)) hit++;
     const coverage = hit / item.t.size;
@@ -53,9 +64,14 @@ export function matchFaq(text: string): string | null {
 
 export type FastPath = { kind: 'emergency' | 'greeting' | 'faq'; text: string } | null;
 
-export function routeFast(userText: string): FastPath {
-  if (EMERGENCY.test(userText)) return { kind: 'emergency', text: EMERGENCY_REPLY };
+export function routeFast(
+  userText: string,
+  ctx?: { faqCategories?: FaqCategory[]; settings?: Partial<StoreSettings> }
+): FastPath {
+  if (EMERGENCY.test(userText)) {
+    return { kind: 'emergency', text: getEmergencyReply(ctx?.settings?.phone) };
+  }
   if (GREETING.test(userText)) return { kind: 'greeting', text: GREETING_REPLY };
-  const a = matchFaq(userText);
+  const a = matchFaq(userText, ctx?.faqCategories);
   return a ? { kind: 'faq', text: a } : null;
 }

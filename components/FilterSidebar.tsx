@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Minus, Plus } from 'lucide-react';
-import { BRANDS, TOP_CATEGORIES } from '@/lib/data';
+import { useStore } from '@/context/StoreContext';
 import type { FilterState } from '@/lib/types';
 
 interface FilterSidebarProps {
@@ -10,6 +10,7 @@ interface FilterSidebarProps {
   onChange: (next: FilterState) => void;
   inStockCount: number;
   outOfStockCount: number;
+  maxPriceBound?: number;
   showColors?: boolean;
   onApplyClose?: () => void;
 }
@@ -28,9 +29,11 @@ export default function FilterSidebar({
   onChange,
   inStockCount,
   outOfStockCount,
+  maxPriceBound = 35000,
   showColors = true,
   onApplyClose,
 }: FilterSidebarProps) {
+  const { categories, brands } = useStore();
   const [expandedCat, setExpandedCat] = React.useState<string>('Pharmacy Medicines');
 
   const toggleCategory = (catName: string) => {
@@ -71,7 +74,7 @@ export default function FilterSidebar({
       <section className="border-b border-slate-200 pb-5">
         <h2 className="text-sm font-bold text-[#082A66] mb-3">Product Categories</h2>
         <div className="space-y-2">
-          {TOP_CATEGORIES.slice(0, 7).map((cat) => {
+          {categories.slice(0, 7).map((cat) => {
             const checked = filters.categories.includes(cat.name);
             const isExpanded = expandedCat === cat.name;
             return (
@@ -129,19 +132,20 @@ export default function FilterSidebar({
         </div>
       </section>
 
-      {/* Price Range */}
+      {/* Price Range (PKR) */}
       <section className="border-b border-slate-200 pb-5">
-        <h2 className="text-sm font-bold text-[#082A66] mb-3">Price</h2>
+        <h2 className="text-sm font-bold text-[#082A66] mb-3">Price (PKR)</h2>
         <input
           type="range"
           min={0}
-          max={150}
-          value={filters.maxPrice}
-          aria-label="Maximum price"
+          max={maxPriceBound}
+          step={500}
+          value={Math.min(maxPriceBound, filters.maxPrice)}
+          aria-label="Maximum price in PKR"
           onChange={(e) =>
             onChange({
               ...filters,
-              maxPrice: Math.max(filters.minPrice + 5, Number(e.target.value)),
+              maxPrice: Math.max(filters.minPrice + 500, Number(e.target.value)),
             })
           }
           className="w-full accent-[#7B3CA1] cursor-pointer mb-3"
@@ -150,7 +154,7 @@ export default function FilterSidebar({
           <label className="block">
             <span className="sr-only">Minimum price</span>
             <div className="flex items-center border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white">
-              <span className="text-slate-400 mr-1">$</span>
+              <span className="text-slate-400 mr-1">Rs.</span>
               <input
                 type="number"
                 min={0}
@@ -166,14 +170,17 @@ export default function FilterSidebar({
           <label className="block">
             <span className="sr-only">Maximum price</span>
             <div className="flex items-center border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white">
-              <span className="text-slate-400 mr-1">$</span>
+              <span className="text-slate-400 mr-1">Rs.</span>
               <input
                 type="number"
                 min={filters.minPrice}
-                max={500}
+                max={maxPriceBound * 2}
                 value={filters.maxPrice}
                 onChange={(e) =>
-                  onChange({ ...filters, maxPrice: Math.max(filters.minPrice, Number(e.target.value) || 150) })
+                  onChange({
+                    ...filters,
+                    maxPrice: Math.max(filters.minPrice, Number(e.target.value) || maxPriceBound),
+                  })
                 }
                 className="w-full focus:outline-none tabular-nums text-slate-800"
               />
@@ -238,7 +245,7 @@ export default function FilterSidebar({
       <section className="pb-2">
         <h2 className="text-sm font-bold text-[#082A66] mb-3">Brands</h2>
         <div className="space-y-2 text-sm text-slate-700">
-          {BRANDS.map((brand) => {
+          {brands.map((brand) => {
             const checked = filters.brands.includes(brand.name);
             return (
               <label key={brand.name} className="flex items-center gap-2.5 cursor-pointer">

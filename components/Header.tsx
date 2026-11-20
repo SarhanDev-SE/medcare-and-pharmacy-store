@@ -15,7 +15,6 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { MEGA_MENU_COLUMNS, STORE_INFO, TOP_CATEGORIES } from '@/lib/data';
 import { formatMoney } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
 import type { CurrencyCode } from '@/lib/types';
@@ -24,6 +23,9 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const {
+    categories,
+    settings,
+    products,
     user,
     currency,
     setCurrency,
@@ -78,6 +80,7 @@ export default function Header() {
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
               className="bg-transparent text-white/90 text-xs font-medium focus:outline-none cursor-pointer"
             >
+              <option value="PKR" className="text-slate-900">Rs. PKR (PK)</option>
               <option value="USD" className="text-slate-900">$ Dollar (US)</option>
               <option value="EUR" className="text-slate-900">€ Euro (EU)</option>
               <option value="GBP" className="text-slate-900">£ Pound (UK)</option>
@@ -86,18 +89,18 @@ export default function Header() {
 
           <div className="flex items-center justify-center gap-2 mx-auto sm:mx-0">
             <Percent className="w-3.5 h-3.5 text-purple-200 shrink-0" aria-hidden="true" />
-            <span className="truncate">Enjoy 10% Off Your First Purchase! Use Code:</span>
+            <span className="truncate">{settings.promoBannerText}</span>
             <button
               type="button"
               onClick={() => setNewsletterOpen(true)}
               className="border border-dashed border-white/60 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold tracking-wider hover:bg-white hover:text-[#082A66] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              FIRST10
+              {settings.promoCode}
             </button>
           </div>
 
           <div className="hidden md:flex items-center gap-3 text-white/80">
-            <span className="whitespace-nowrap">24/7 Support: {STORE_INFO.phone}</span>
+            <span className="whitespace-nowrap">24/7 Support: {settings.phone}</span>
           </div>
         </div>
       </div>
@@ -118,7 +121,7 @@ export default function Header() {
               href="/"
               className="text-2xl font-bold tracking-tight text-[#082A66] whitespace-nowrap shrink-0"
             >
-              Xmedcar
+              {settings.brandName}
             </Link>
           </div>
 
@@ -137,7 +140,7 @@ export default function Header() {
               className="bg-[#082A66] text-white text-xs font-medium rounded-full px-4 py-2 focus:outline-none cursor-pointer shrink-0"
             >
               <option value="All Categories">All Categories</option>
-              {TOP_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat.id} value={cat.name}>
                   {cat.name}
                 </option>
@@ -187,7 +190,7 @@ export default function Header() {
               <div className="leading-tight">
                 <p className="text-[11px] text-slate-500">Need help:</p>
                 <p className="text-xs font-semibold text-[#082A66] tabular-nums">
-                  {STORE_INFO.phone}
+                  {settings.phone}
                 </p>
               </div>
             </div>
@@ -274,7 +277,7 @@ export default function Header() {
 
               {categoryRailOpen && (
                 <div className="absolute left-0 top-full w-64 bg-white border border-slate-200 rounded-b-xl shadow-lg py-2 z-50">
-                  {TOP_CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <Link
                       key={cat.id}
                       href={`/shop?category=${encodeURIComponent(cat.name)}`}
@@ -330,7 +333,7 @@ export default function Header() {
                 {megaMenuOpen && (
                   <div className="absolute left-0 right-0 top-full bg-white border-t border-b border-slate-200 shadow-xl z-50">
                     <div className="max-w-[1320px] mx-auto px-6 py-7 grid grid-cols-6 gap-6">
-                      {MEGA_MENU_COLUMNS.map((col) => (
+                      {settings.megaMenuColumns.map((col) => (
                         <div key={col.title}>
                           <h3 className="text-xs font-bold text-[#082A66] uppercase tracking-wider mb-3">
                             {col.title}
@@ -356,7 +359,7 @@ export default function Header() {
               </div>
 
               <Link
-                href="/product/gaia-herbs-relax-gummies"
+                href={`/product/${products[0]?.slug ?? 'gaia-herbs-relax-gummies'}`}
                 className={`py-3 transition-colors whitespace-nowrap shrink-0 ${
                   pathname.startsWith('/product')
                     ? 'text-[#7B3CA1] font-semibold'
@@ -541,7 +544,7 @@ export default function Header() {
                 Categories
               </p>
               <div className="flex flex-col gap-1.5">
-                {TOP_CATEGORIES.slice(0, 6).map((cat) => (
+                {categories.slice(0, 6).map((cat) => (
                   <Link
                     key={cat.id}
                     href={`/shop?category=${encodeURIComponent(cat.name)}`}

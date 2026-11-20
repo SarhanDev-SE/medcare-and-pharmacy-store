@@ -8,18 +8,21 @@ import { buildCartLine, type ProductCardData } from '@/lib/chat/catalog';
 import { formatMoney } from '@/lib/store-logic';
 
 export function ChatProductCard({ p }: { p: ProductCardData }) {
-  const { currency, addToCart } = useStore();
+  const { currency, products, addToCart } = useStore();
   const [variantId, setVariantId] = useState(p.defaultVariantId);
   const [added, setAdded] = useState(false);
   const variant = p.variants.find((v) => v.id === variantId) ?? p.variants[0];
 
   const add = () => {
-    const built = buildCartLine({
-      productId: p.id,
-      variantId,
-      quantity: 1,
-      purchaseMode: 'one-time',
-    });
+    const built = buildCartLine(
+      {
+        productId: p.id,
+        variantId,
+        quantity: 1,
+        purchaseMode: 'one-time',
+      },
+      products
+    );
     if (!built.ok) return;
     addToCart(built.line, false);
     setAdded(true);

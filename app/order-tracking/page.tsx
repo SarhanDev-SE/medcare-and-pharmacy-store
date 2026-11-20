@@ -16,21 +16,42 @@ import { formatMoney } from '@/lib/store-logic';
 import type { Order } from '@/lib/types';
 
 export default function OrderTrackingPage() {
-  const { orders, currency } = useStore();
-  const [orderInput, setOrderInput] = useState('#436');
-  const [emailInput, setEmailInput] = useState('xmedcar@domain.com');
+  const { orders, currency, settings } = useStore();
+  const [orderInput, setOrderInput] = useState(orders[0]?.number ?? '#1002');
+  const [emailInput, setEmailInput] = useState(orders[0]?.billingEmail ?? 'customer.xmedcar@gmail.com');
   const [matchedOrder, setMatchedOrder] = useState<Order | null>(orders[0] ?? null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanNum = orderInput.trim().replace(/^#/, '');
     const cleanEmail = emailInput.trim().toLowerCase();
 
     if (!cleanNum) {
-      setSearchError('Please enter your Order ID (for example: #436).');
+      setSearchError('Please enter your Order ID (for example: #1002).');
       setMatchedOrder(null);
       return;
+    }
+
+    setSearching(true);
+    setSearchError(null);
+
+    try {
+      const params = new URLSearchParams({ number: cleanNum });
+      if (cleanEmail) params.set('email', cleanEmail);
+      const res = await fetch(`/api/shopify/orders?${params.toString()}`);
+      if (res.ok) {
+        const data = (await res.json()) as { ok?: boolean; order?: Order };
+        if (data.ok && data.order) {
+          setMatchedOrder(data.order);
+          return;
+        }
+      }
+    } catch {
+      // Fall through to local session check
+    } finally {
+      setSearching(false);
     }
 
     const found = orders.find((o) => {
@@ -41,7 +62,7 @@ export default function OrderTrackingPage() {
 
     if (!found) {
       setSearchError(
-        `No order matching #${cleanNum}${cleanEmail ? ` for ${cleanEmail}` : ''}. Try one of your recent orders below.`
+        `No Shopify order matching #${cleanNum}${cleanEmail ? ` for ${cleanEmail}` : ''}. Try order #1002 or #1003.`
       );
       setMatchedOrder(null);
       return;
@@ -92,7 +113,7 @@ export default function OrderTrackingPage() {
                   type="text"
                   value={orderInput}
                   onChange={(e) => setOrderInput(e.target.value)}
-                  placeholder="e.g. #436"
+                  placeholder="e.g. #1002"
                   className="w-full h-11 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:border-[#7B3CA1] font-mono"
                 />
               </div>
@@ -109,7 +130,7 @@ export default function OrderTrackingPage() {
                   type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="xmedcar@domain.com"
+                  placeholder="customer.xmedcar@gmail.com"
                   className="w-full h-11 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:border-[#7B3CA1]"
                 />
               </div>
@@ -122,10 +143,11 @@ export default function OrderTrackingPage() {
 
               <button
                 type="submit"
-                className="w-full h-11 rounded-lg bg-[#7B3CA1] hover:bg-[#662F87] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                disabled={searching}
+                className="w-full h-11 rounded-lg bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-60 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <Search className="w-4 h-4" />
-                Track Order
+                {searching ? 'Checking Shopify Order...' : 'Track Order'}
               </button>
             </form>
 
@@ -187,7 +209,7 @@ export default function OrderTrackingPage() {
 
                 {matchedOrder.status === 'Cancelled' ? (
                   <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-800">
-                    This order was cancelled. If you believe this was in error, please contact 24/7 support at (+01) 1234 8888.
+                    This order was cancelled. If you believe this was in error, please contact 24/7 support at {settings.phone}.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -291,7 +313,7 @@ export default function OrderTrackingPage() {
                   Enter An Order Number To Inspect Status
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  Try sample order IDs like #436, #426, or #418 using xmedcar@domain.com.
+                  Try Shopify order IDs like #1002 or #1003 using customer.xmedcar@gmail.com.
                 </p>
               </div>
             )}

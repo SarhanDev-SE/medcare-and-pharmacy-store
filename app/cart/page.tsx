@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Minus, Plus, Truck, X } from 'lucide-react';
-import { formatMoney, FREE_SHIPPING_THRESHOLD, partitionCartItems } from '@/lib/store-logic';
+import { formatMoney, partitionCartItems } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import type { CartItem } from '@/lib/types';
@@ -12,12 +12,13 @@ import type { CartItem } from '@/lib/types';
 export default function CartPage() {
   const router = useRouter();
   const {
+    settings,
     currency,
     cart,
     updateCartQty,
     removeFromCart,
     couponCode,
-    applyCoupon,
+    applyCouponAsync,
     removeCoupon,
     cartSummary,
     showToast,
@@ -25,18 +26,24 @@ export default function CartPage() {
 
   const [couponInput, setCouponInput] = useState('');
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [showAddressEdit, setShowAddressEdit] = useState(false);
   const [shippingLocation, setShippingLocation] = useState(
-    '222 Clics, 7 Avenue, San Francisco, CA 90001.'
+    'House 24-B, Khayaban-e-Ittehad, DHA Phase 6, Karachi 75600, Pakistan.'
   );
 
   const { regularItems, prescriptionItems } = partitionCartItems(cart);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = applyCoupon(couponInput);
-    setCouponMsg({ ok: res.valid, text: res.message });
-    if (res.valid) setCouponInput('');
+    setApplyingCoupon(true);
+    try {
+      const res = await applyCouponAsync(couponInput);
+      setCouponMsg({ ok: res.valid, text: res.message });
+      if (res.valid) setCouponInput('');
+    } finally {
+      setApplyingCoupon(false);
+    }
   };
 
   const renderCartRow = (item: CartItem) => (
@@ -188,9 +195,10 @@ export default function CartPage() {
                 />
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                  disabled={applyingCoupon}
+                  className="px-6 py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-60 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
                 >
-                  Apply Coupon
+                  {applyingCoupon ? 'Checking...' : 'Apply Coupon'}
                 </button>
               </form>
 
@@ -226,7 +234,8 @@ export default function CartPage() {
                       <span className="font-bold text-[#7B3CA1] tabular-nums">
                         {formatMoney(cartSummary.amountToFreeShipping, currency)}
                       </span>{' '}
-                      more to get <strong className="text-[#7B3CA1]">Free Shipping</strong> (${FREE_SHIPPING_THRESHOLD})
+                      more to get <strong className="text-[#7B3CA1]">Free Shipping</strong> (
+                      {formatMoney(settings.freeShippingThreshold, currency)})
                     </>
                   ) : (
                     <span className="font-semibold text-emerald-700">
@@ -270,7 +279,11 @@ export default function CartPage() {
                 <div className="flex items-start justify-between gap-4 pt-2 border-t border-slate-100">
                   <span className="font-semibold text-[#082A66]">Shipment</span>
                   <div className="text-right space-y-1">
-                    <p className="font-bold text-[#082A66]">Free shipping</p>
+                    <p className="font-bold text-[#082A66] tabular-nums">
+                      {cartSummary.shippingCost === 0
+                        ? 'Free shipping'
+                        : formatMoney(cartSummary.shippingCost, currency)}
+                    </p>
                     <p className="text-slate-500 leading-relaxed">
                       Shipping to <strong className="text-[#082A66]">{shippingLocation}</strong>
                     </p>

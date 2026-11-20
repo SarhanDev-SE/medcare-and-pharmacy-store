@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import { STORE_INFO } from '@/lib/data';
 import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function ContactPage() {
-  const { showToast } = useStore();
+  const { settings, showToast } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -47,34 +46,34 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <p className="font-bold text-[#082A66]">Phone:</p>
-                <p className="text-slate-600 mt-1 tabular-nums">{STORE_INFO.phone}</p>
+                <p className="text-slate-600 mt-1 tabular-nums">{settings.phone}</p>
               </div>
               <div>
                 <p className="font-bold text-[#082A66]">Email:</p>
-                <p className="text-slate-600 mt-1">{STORE_INFO.email}</p>
+                <p className="text-slate-600 mt-1">{settings.email}</p>
               </div>
             </div>
 
             <div className="text-xs">
               <p className="font-bold text-[#082A66]">Address:</p>
-              <p className="text-slate-600 mt-1">{STORE_INFO.contactAddress}</p>
+              <p className="text-slate-600 mt-1">{settings.contactAddress}</p>
             </div>
 
             <div className="text-xs space-y-1">
               <p className="font-bold text-[#082A66]">Open Time:</p>
               <p className="text-slate-600">
-                Mon - Sat: <strong className="text-[#082A66]">{STORE_INFO.hoursWeekday}</strong>
+                Mon - Sat: <strong className="text-[#082A66]">{settings.hoursWeekday}</strong>
               </p>
               <p className="text-slate-600">
-                Sunday: <strong className="text-[#082A66]">{STORE_INFO.hoursSunday}</strong>
+                Sunday: <strong className="text-[#082A66]">{settings.hoursSunday}</strong>
               </p>
             </div>
           </div>
 
           <div className="lg:col-span-7 min-h-[300px] bg-slate-100">
             <img
-              src="/images/pages/contact-map.png"
-              alt="Map showing Xmedcar East Chicago pharmacy location"
+              src={settings.contactMapImage}
+              alt="Map showing Xmedcar pharmacy location"
               className="w-full h-full object-cover"
             />
           </div>

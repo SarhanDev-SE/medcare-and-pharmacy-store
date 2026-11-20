@@ -1,10 +1,12 @@
-export type CurrencyCode = 'USD' | 'EUR' | 'GBP';
+export type CurrencyCode = 'PKR' | 'USD' | 'EUR' | 'GBP';
 
 export interface ProductVariant {
   id: string;
+  shopifyVariantId?: string;
   label: string;
   price: number;
   originalPrice?: number;
+  inventoryQuantity?: number;
 }
 
 export interface ProductReview {
@@ -17,6 +19,7 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  shopifyId?: string;
   slug: string;
   name: string;
   category: string;
@@ -60,6 +63,7 @@ export interface Product {
 
 export interface CategoryNode {
   id: string;
+  shopifyId?: string;
   slug: string;
   name: string;
   badge?: 'HOT' | 'NEW';
@@ -68,9 +72,122 @@ export interface CategoryNode {
   subcategories: string[];
 }
 
+export interface HeroSlide {
+  id: string;
+  kicker: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  href: string;
+  image: string;
+  bgClass: string;
+  textDark: boolean;
+  sortOrder: number;
+}
+
+export interface PromoBanner {
+  id: string;
+  bannerKey: string;
+  sectionGroup: 'dual' | 'split-main' | 'split-tile';
+  kicker?: string;
+  title: string;
+  subtitle?: string;
+  cta?: string;
+  href: string;
+  image: string;
+  bgClass: string;
+  sortOrder: number;
+}
+
+export interface SubcategoryBadge {
+  id: string;
+  label: string;
+  count: number;
+  image: string;
+  isPromo: boolean;
+  promoLabel?: string;
+  sortOrder: number;
+}
+
+export interface MegaMenuColumn {
+  title: string;
+  links: { label: string; query: string }[];
+}
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+export interface FaqCategory {
+  category: string;
+  items: FaqItem[];
+}
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  location: string;
+  rating: number;
+  quote: string;
+}
+
+export interface ActiveCoupon {
+  code: string;
+  percentOff: number;
+  description: string;
+}
+
+export interface StoreSettings {
+  brandName: string;
+  shopName: string;
+  phone: string;
+  email: string;
+  address: string;
+  contactAddress: string;
+  hoursWeekday: string;
+  hoursSunday: string;
+  promoCode: string;
+  promoBannerText: string;
+  currencyCode: CurrencyCode;
+  country: string;
+  freeShippingThreshold: number;
+  standardShippingFee: number;
+  newsletterImage: string;
+  aboutImage: string;
+  contactMapImage: string;
+  countdownHeadline: string;
+  partnerBrands: string[];
+  megaMenuColumns: MegaMenuColumn[];
+  featuredKeywords: string[];
+}
+
+export interface StorefrontData {
+  source: 'shopify' | 'fallback';
+  products: Product[];
+  categories: CategoryNode[];
+  featuredCollections: {
+    topPicks: Product[];
+    featured: Product[];
+    recent: Product[];
+    bestsellers: Product[];
+    saleOff: Product[];
+  };
+  heroSlides: HeroSlide[];
+  promoBanners: PromoBanner[];
+  subcategoryBadges: SubcategoryBadge[];
+  blogs: BlogPost[];
+  faqCategories: FaqCategory[];
+  testimonials: Testimonial[];
+  coupons: Record<string, ActiveCoupon>;
+  settings: StoreSettings;
+  brands: { name: string; count: number }[];
+}
+
 export interface CartItem {
   id: string; // unique line key (productId + variantId + purchaseMode)
   productId: string;
+  shopifyVariantId?: string;
   slug: string;
   name: string;
   image: string;
@@ -106,6 +223,8 @@ export type OrderStatus = 'Processing' | 'Completed' | 'Pending payment' | 'Canc
 
 export interface Order {
   id: string;
+  shopifyOrderId?: string;
+  shopifyOrderUrl?: string;
   number: string; // e.g. #436
   date: string;
   status: OrderStatus;
@@ -200,3 +319,4 @@ export interface FilterState {
   search: string;
   sort: 'best-selling' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
 }
+

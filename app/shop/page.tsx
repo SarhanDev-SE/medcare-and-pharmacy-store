@@ -10,8 +10,8 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { PRODUCTS, SUBCATEGORY_BADGES } from '@/lib/data';
 import { filterAndSortProducts } from '@/lib/store-logic';
+import { useStore } from '@/context/StoreContext';
 import type { FilterState } from '@/lib/types';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import FilterSidebar from '@/components/FilterSidebar';
@@ -30,11 +30,18 @@ function ShopCatalogBody({
   initialQ: string;
   initialDeals: string | null;
 }) {
+  const { products, subcategoryBadges } = useStore();
+
+  const maxPriceBound = useMemo(
+    () => Math.max(35000, ...products.map((p) => Math.ceil(p.price / 1000) * 1000)),
+    [products]
+  );
+
   const [filters, setFilters] = useState<FilterState>({
     categories: initialCat ? [initialCat] : [],
     subcategory: initialSub || null,
     minPrice: 0,
-    maxPrice: 150,
+    maxPrice: maxPriceBound,
     availability: ['in-stock'],
     brands: [],
     colors: [],
@@ -48,18 +55,18 @@ function ShopCatalogBody({
   const [page, setPage] = useState(1);
 
   const filteredProducts = useMemo(() => {
-    let res = filterAndSortProducts(PRODUCTS, filters);
+    let res = filterAndSortProducts(products, filters);
     if (initialDeals === '1') {
       res = res.filter((p) => Boolean(p.discountPercent));
     }
     return res;
-  }, [filters, initialDeals]);
+  }, [products, filters, initialDeals]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const inStockCount = PRODUCTS.filter((p) => p.inStock).length;
-  const outOfStockCount = PRODUCTS.filter((p) => !p.inStock).length;
+  const inStockCount = products.filter((p) => p.inStock).length;
+  const outOfStockCount = products.filter((p) => !p.inStock).length;
 
   const activePills: { key: string; label: string; onRemove: () => void }[] = [];
   filters.categories.forEach((cat) =>
@@ -77,11 +84,11 @@ function ShopCatalogBody({
       onRemove: () => setFilters((f) => ({ ...f, subcategory: null })),
     });
   }
-  if (filters.minPrice > 0 || filters.maxPrice < 150) {
+  if (filters.minPrice > 0 || filters.maxPrice < maxPriceBound) {
     activePills.push({
       key: 'price',
-      label: `$${filters.minPrice} - $${filters.maxPrice}`,
-      onRemove: () => setFilters((f) => ({ ...f, minPrice: 0, maxPrice: 150 })),
+      label: `Rs. ${filters.minPrice.toLocaleString('en-US')} - Rs. ${filters.maxPrice.toLocaleString('en-US')}`,
+      onRemove: () => setFilters((f) => ({ ...f, minPrice: 0, maxPrice: maxPriceBound })),
     });
   }
   filters.brands.forEach((b) =>
@@ -113,7 +120,7 @@ function ShopCatalogBody({
       categories: [],
       subcategory: null,
       minPrice: 0,
-      maxPrice: 150,
+      maxPrice: maxPriceBound,
       availability: [],
       brands: [],
       colors: [],
@@ -148,7 +155,7 @@ function ShopCatalogBody({
       {/* Circular Subcategory Badge Carousel (Screen 07) */}
       <section className="max-w-[1320px] mx-auto px-4 py-4">
         <div className="flex items-center gap-5 overflow-x-auto pb-2">
-          {SUBCATEGORY_BADGES.map((badge) => {
+          {subcategoryBadges.map((badge) => {
             const isSelected = filters.subcategory === badge.label;
             return (
               <button
@@ -227,6 +234,7 @@ function ShopCatalogBody({
                 }}
                 inStockCount={inStockCount}
                 outOfStockCount={outOfStockCount}
+                maxPriceBound={maxPriceBound}
               />
             </aside>
           )}
@@ -471,6 +479,7 @@ function ShopCatalogBody({
               }}
               inStockCount={inStockCount}
               outOfStockCount={outOfStockCount}
+              maxPriceBound={maxPriceBound}
               onApplyClose={() => setDrawerOpen(false)}
             />
           </div>

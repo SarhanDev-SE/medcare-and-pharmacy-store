@@ -21,7 +21,6 @@ import {
   Thermometer,
   Truck,
 } from 'lucide-react';
-import { PRODUCTS } from '@/lib/data';
 import {
   formatMoney,
   getDefaultProductVariantIndex,
@@ -47,6 +46,8 @@ export default function ProductDetailPage({
   const { slug } = use(params);
   const router = useRouter();
   const {
+    products,
+    settings,
     currency,
     addToCart,
     wishlistIds,
@@ -57,7 +58,7 @@ export default function ProductDetailPage({
     showToast,
   } = useStore();
 
-  const product = PRODUCTS.find((p) => p.slug === slug) ?? PRODUCTS[0];
+  const product = products.find((p) => p.slug === slug) ?? products[0];
   const galleryImages =
     product.gallery.length > 0 ? product.gallery : [product.image];
 
@@ -103,23 +104,24 @@ export default function ProductDetailPage({
   const activePrice = purchaseMode === 'subscription' ? subPrice : oneTimePrice;
   const isWishlisted = wishlistIds.includes(product.id);
 
-  const substituteProducts = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
-  const relatedProducts = PRODUCTS.filter(
+  const substituteProducts = products.filter((p) => p.id !== product.id).slice(0, 4);
+  const relatedProducts = products.filter(
     (p) => p.id !== product.id && p.category === product.category
   ).slice(0, 4);
   const recentlyViewedProducts = recentlyViewedIds
-    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .map((id) => products.find((p) => p.id === id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p))
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
 
   const handleZipCheck = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\d{5}$/.test(zipInput.trim())) {
-      setZipMessage('Enter a valid 5-digit US ZIP code (e.g., 90001).');
+    const cleaned = zipInput.trim();
+    if (cleaned.length < 3) {
+      setZipMessage('Enter a valid Pakistani city or 5-digit postal code (e.g., Karachi or 75600).');
       return;
     }
-    setZipMessage(`Express delivery available to ${zipInput.trim()} — Arrives in 2 business days.`);
+    setZipMessage(`Express delivery available to ${cleaned} — Arrives in 2–4 business days.`);
   };
 
   const handleAddAction = (goCheckout: boolean) => {
@@ -130,6 +132,7 @@ export default function ProductDetailPage({
     addToCart(
       {
         productId: product.id,
+        shopifyVariantId: variant?.shopifyVariantId,
         slug: product.slug,
         name: product.name,
         image: product.image,
@@ -487,8 +490,8 @@ export default function ProductDetailPage({
                   type="text"
                   value={zipInput}
                   onChange={(e) => setZipInput(e.target.value)}
-                  placeholder="Enter Pincode / Zip Code"
-                  aria-label="ZIP code for delivery check"
+                  placeholder="Enter City or Postal Code (e.g., Karachi, 75600)"
+                  aria-label="City or postal code for delivery check"
                   className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#7B3CA1]"
                 />
                 <button
@@ -630,8 +633,11 @@ export default function ProductDetailPage({
         )}
         {activeTab === 'shipping' && (
           <div className="text-sm text-slate-600 space-y-2 max-w-4xl">
-            <p>Orders placed before 2:00 PM PST ship same business day from our licensed East Chicago pharmacy hub.</p>
-            <p>Temperature-controlled Rx formulations travel in insulated cold-chain pouches at no extra cost on orders over $200.</p>
+            <p>Orders placed before 2:00 PM PKT ship same business day from our licensed Karachi &amp; Lahore pharmacy hubs.</p>
+            <p>
+              Temperature-controlled Rx formulations travel in insulated cold-chain pouches — free insured delivery across Pakistan on orders over{' '}
+              {formatMoney(settings.freeShippingThreshold, currency)} ({formatMoney(settings.standardShippingFee, currency)} standard courier below threshold).
+            </p>
             <p>30-day return policy applies to unopened non-prescription items.</p>
           </div>
         )}

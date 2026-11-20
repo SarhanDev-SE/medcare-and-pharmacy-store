@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { BLOG_POSTS } from '@/lib/data';
+import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 const BLOG_CATEGORIES = [
@@ -29,12 +29,13 @@ const POPULAR_TAGS = [
 ];
 
 export default function BlogListPage() {
+  const { blogs } = useStore();
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const filteredPosts = useMemo(() => {
-    return BLOG_POSTS.filter((post) => {
+    return blogs.filter((post) => {
       if (selectedTag && !post.tags.includes(selectedTag)) return false;
       if (search.trim()) {
         const q = search.trim().toLowerCase();
@@ -46,7 +47,7 @@ export default function BlogListPage() {
       }
       return true;
     });
-  }, [search, selectedTag]);
+  }, [blogs, search, selectedTag]);
 
   const pageSize = 3;
   const totalPages = Math.max(1, Math.ceil(filteredPosts.length / pageSize));
@@ -170,7 +171,7 @@ export default function BlogListPage() {
             <div>
               <h3 className="text-lg font-bold text-[#082A66] mb-3">Recent Posts</h3>
               <div className="space-y-4">
-                {BLOG_POSTS.map((p) => (
+                {blogs.map((p) => (
                   <Link
                     key={p.id}
                     href={`/blog/${p.slug}`}

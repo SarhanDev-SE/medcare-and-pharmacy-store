@@ -1,4 +1,5 @@
 import type {
+  ActiveCoupon,
   CartItem,
   CurrencyCode,
   FilterState,
@@ -7,34 +8,47 @@ import type {
   Product,
 } from './types';
 
-export const FREE_SHIPPING_THRESHOLD = 200;
-export const STANDARD_SHIPPING_FEE = 12.99;
+export const PKR_PER_USD = 280;
+export const FREE_SHIPPING_THRESHOLD = 15000;
+export const STANDARD_SHIPPING_FEE = 350;
+
+export function usdToPkr(amountUsd: number): number {
+  return Math.round((amountUsd * PKR_PER_USD) / 10) * 10;
+}
 
 export const CURRENCY_RATES: Record<CurrencyCode, { symbol: string; rate: number }> = {
-  USD: { symbol: '$', rate: 1 },
-  EUR: { symbol: '€', rate: 0.92 },
-  GBP: { symbol: '£', rate: 0.79 },
+  PKR: { symbol: 'Rs. ', rate: 1 },
+  USD: { symbol: '$', rate: 1 / PKR_PER_USD },
+  EUR: { symbol: '€', rate: 0.92 / PKR_PER_USD },
+  GBP: { symbol: '£', rate: 0.79 / PKR_PER_USD },
 };
 
-export const COUPONS: Record<string, { code: string; percentOff: number; description: string }> = {
+export const COUPONS: Record<string, ActiveCoupon> = {
   FIRST10: { code: 'FIRST10', percentOff: 10, description: '10% off your first purchase' },
   SAVE15: { code: 'SAVE15', percentOff: 15, description: '15% off pharmacy wellness orders' },
 };
 
-export function formatMoney(amountUsd: number, currency: CurrencyCode = 'USD'): string {
-  const { symbol, rate } = CURRENCY_RATES[currency];
-  const converted = amountUsd * rate;
+export function formatMoney(amountPkr: number, currency: CurrencyCode = 'PKR'): string {
+  const { symbol, rate } = CURRENCY_RATES[currency] ?? CURRENCY_RATES.PKR;
+  const converted = amountPkr * rate;
+  if (currency === 'PKR') {
+    const rounded = Math.round(converted);
+    return `${symbol}${rounded.toLocaleString('en-US')}`;
+  }
   return `${symbol}${converted.toFixed(2)}`;
 }
 
-export function getSubscriptionPrice(basePrice: number): number {
-  return Number((basePrice * 0.85).toFixed(2));
+export function getSubscriptionPrice(basePricePkr: number): number {
+  return Math.round((basePricePkr * 0.85) / 10) * 10;
 }
 
 export function calculateCartSummary(
   items: CartItem[],
   couponCode: string | null,
-  freeShippingEnabled = true
+  freeShippingEnabled = true,
+  couponsMap: Record<string, ActiveCoupon> = COUPONS,
+  freeShippingThreshold: number = FREE_SHIPPING_THRESHOLD,
+  standardShippingFee: number = STANDARD_SHIPPING_FEE
 ): {
   subtotal: number;
   discountAmount: number;
@@ -45,38 +59,33 @@ export function calculateCartSummary(
   itemCount: number;
   hasRxItems: boolean;
 } {
-  const subtotal = Number(
-    items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)
+  const subtotal = Math.round(
+    items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const hasRxItems = items.some((item) => item.isRx);
 
   let discountAmount = 0;
   if (couponCode) {
-    const coupon = COUPONS[couponCode.trim().toUpperCase()];
+    const coupon = couponsMap[couponCode.trim().toUpperCase()];
     if (coupon) {
-      discountAmount = Number(((subtotal * coupon.percentOff) / 100).toFixed(2));
+      discountAmount = Math.round((subtotal * coupon.percentOff) / 100);
     }
   }
 
-  const discountedSubtotal = Math.max(0, Number((subtotal - discountAmount).toFixed(2)));
-  const amountToFreeShipping = Math.max(
-    0,
-    Number((FREE_SHIPPING_THRESHOLD - discountedSubtotal).toFixed(2))
-  );
-  const freeShippingProgress = Math.min(
-    100,
-    Math.round((discountedSubtotal / FREE_SHIPPING_THRESHOLD) * 100)
-  );
+  const discountedSubtotal = Math.max(0, Math.round(subtotal - discountAmount));
+  const threshold = Math.max(1, freeShippingThreshold);
+  const amountToFreeShipping = Math.max(0, Math.round(threshold - discountedSubtotal));
+  const freeShippingProgress = Math.min(100, Math.round((discountedSubtotal / threshold) * 100));
 
   const shippingCost =
     items.length === 0
       ? 0
-      : freeShippingEnabled && discountedSubtotal >= FREE_SHIPPING_THRESHOLD
+      : freeShippingEnabled && discountedSubtotal >= threshold
         ? 0
-        : 0; // Store displays Free shipping in summary for SF/US standard or calculates above threshold
+        : standardShippingFee;
 
-  const total = Number((discountedSubtotal + shippingCost).toFixed(2));
+  const total = Math.max(0, Math.round(discountedSubtotal + shippingCost));
 
   return {
     subtotal,
@@ -100,7 +109,10 @@ export function partitionCartItems(items: CartItem[]): {
   };
 }
 
-export function validateCouponCode(code: string): {
+export function validateCouponCode(
+  code: string,
+  couponsMap: Record<string, ActiveCoupon> = COUPONS
+): {
   valid: boolean;
   normalizedCode: string | null;
   message: string;
@@ -109,12 +121,13 @@ export function validateCouponCode(code: string): {
   if (!normalized) {
     return { valid: false, normalizedCode: null, message: 'Please enter a coupon code.' };
   }
-  const match = COUPONS[normalized];
+  const match = couponsMap[normalized];
   if (!match) {
+    const available = Object.keys(couponsMap).slice(0, 3).join(' or ') || 'FIRST10';
     return {
       valid: false,
       normalizedCode: null,
-      message: `Coupon "${normalized}" is invalid. Try FIRST10 or SAVE15.`,
+      message: `Coupon "${normalized}" is invalid. Try ${available}.`,
     };
   }
   return {

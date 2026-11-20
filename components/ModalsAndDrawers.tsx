@@ -18,10 +18,8 @@ import {
   Truck,
   X,
 } from 'lucide-react';
-import { PRODUCTS } from '@/lib/data';
 import {
   formatMoney,
-  FREE_SHIPPING_THRESHOLD,
   getDefaultProductVariantIndex,
 } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
@@ -30,7 +28,10 @@ import ProductCard from './ProductCard';
 export default function ModalsAndDrawers() {
   const router = useRouter();
   const {
+    products,
+    settings,
     currency,
+    authLoading,
     login,
     register,
     authModal,
@@ -41,6 +42,7 @@ export default function ModalsAndDrawers() {
     quickViewProduct,
     closeQuickView,
     cart,
+    shopifyCheckoutUrl,
     addToCart,
     updateCartQty,
     removeFromCart,
@@ -91,7 +93,7 @@ export default function ModalsAndDrawers() {
   const [cartTab, setCartTab] = useState<'note' | 'shipping' | 'coupon' | null>(null);
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [drawerCouponInput, setDrawerCouponInput] = useState('');
-  const [zipEstimate, setZipEstimate] = useState('90001');
+  const [zipEstimate, setZipEstimate] = useState('75600');
 
   // Search overlay state
   const [overlayQuery, setOverlayQuery] = useState('');
@@ -99,14 +101,18 @@ export default function ModalsAndDrawers() {
   // Newsletter modal state
   const [newsEmail, setNewsEmail] = useState('');
 
-  const handleSignInSubmit = (e: React.FormEvent) => {
+  const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authIdentifier.trim() || !authPassword.trim()) {
       setAuthErrorState({ mode: authModal, msg: 'Please enter your username/email and password.' });
       return;
     }
     setAuthErrorState(null);
-    login(authIdentifier, authPassword);
+    const res = await login(authIdentifier, authPassword);
+    if (!res.ok) {
+      setAuthErrorState({ mode: authModal, msg: res.error || 'Invalid credentials.' });
+      return;
+    }
     if (postAuthRedirect) {
       const target = postAuthRedirect;
       clearPostAuthRedirect();
@@ -114,7 +120,7 @@ export default function ModalsAndDrawers() {
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authIdentifier.trim() || authPassword.length < 4) {
       setAuthErrorState({
@@ -128,7 +134,11 @@ export default function ModalsAndDrawers() {
       return;
     }
     setAuthErrorState(null);
-    register(authIdentifier, authPassword);
+    const res = await register(authIdentifier, authPassword);
+    if (!res.ok) {
+      setAuthErrorState({ mode: authModal, msg: res.error || 'Unable to create Shopify account.' });
+      return;
+    }
     if (postAuthRedirect) {
       const target = postAuthRedirect;
       clearPostAuthRedirect();
@@ -141,13 +151,13 @@ export default function ModalsAndDrawers() {
   const qvPrice = qvVariant?.price ?? quickViewProduct?.price ?? 0;
 
   const searchMatches = overlayQuery.trim()
-    ? PRODUCTS.filter((p) =>
+    ? products.filter((p) =>
         `${p.name} ${p.category} ${p.subcategory} ${p.brand}`
           .toLowerCase()
           .includes(overlayQuery.trim().toLowerCase())
       ).slice(0, 4)
     : recentlyViewedIds
-        .map((id) => PRODUCTS.find((p) => p.id === id))
+        .map((id) => products.find((p) => p.id === id))
         .filter((p): p is NonNullable<typeof p> => Boolean(p))
         .slice(0, 4);
 
@@ -202,7 +212,7 @@ export default function ModalsAndDrawers() {
                     type="text"
                     value={authIdentifier}
                     onChange={(e) => setAuthIdentifier(e.target.value)}
-                    placeholder="xmedcar@domain.com"
+                    placeholder="customer.xmedcar@gmail.com"
                     className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#7B3CA1]"
                   />
                 </div>
@@ -243,18 +253,23 @@ export default function ModalsAndDrawers() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => showToast('Password reset link sent if email exists.')}
-                    className="text-[#082A66] font-semibold underline cursor-pointer"
+                    onClick={() => {
+                      setAuthIdentifier('customer.xmedcar@gmail.com');
+                      setAuthPassword('xmedcar123');
+                      setAuthErrorState(null);
+                    }}
+                    className="text-[#7B3CA1] font-semibold underline cursor-pointer"
                   >
-                    Forgot Your Password?
+                    Use Demo Member
                   </button>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] text-white text-sm font-semibold transition-colors cursor-pointer"
+                  disabled={authLoading}
+                  className="w-full py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-60 text-white text-sm font-semibold transition-colors cursor-pointer"
                 >
-                  Login
+                  {authLoading ? 'Signing In...' : 'Login'}
                 </button>
                 <button
                   type="button"
@@ -307,9 +322,10 @@ export default function ModalsAndDrawers() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] text-white text-sm font-semibold transition-colors cursor-pointer"
+                  disabled={authLoading}
+                  className="w-full py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-60 text-white text-sm font-semibold transition-colors cursor-pointer"
                 >
-                  Create Account
+                  {authLoading ? 'Creating Account...' : 'Create Account'}
                 </button>
                 <button
                   type="button"
@@ -362,7 +378,7 @@ export default function ModalsAndDrawers() {
             <div className="mb-6">
               <h3 className="text-sm font-bold text-[#082A66] mb-2.5">Feature Keywords Today</h3>
               <div className="flex items-center flex-wrap gap-2">
-                {['Vitamins', 'Supplements', 'Wellness', 'Health', 'Probiotics', 'Blood Pressure'].map(
+                {settings.featuredKeywords.map(
                   (kw) => (
                     <button
                       key={kw}
@@ -421,7 +437,7 @@ export default function ModalsAndDrawers() {
             </button>
             <div className="bg-[#EEF3F9] flex items-center justify-center min-h-[220px]">
               <img
-                src="/images/pages/newsletter-oral-kit.png"
+                src={settings.newsletterImage}
                 alt="Xmedcar Wellness Kit"
                 className="w-full h-full object-cover"
               />
@@ -444,9 +460,9 @@ export default function ModalsAndDrawers() {
                     showToast('Please enter a valid email address.');
                     return;
                   }
-                  applyCoupon('FIRST10');
+                  applyCoupon(settings.promoCode);
                   setNewsletterOpen(false);
-                  showToast('Code FIRST10 applied! Enjoy 10% off your order.');
+                  showToast(`Code ${settings.promoCode} applied! Enjoy 10% off your order.`);
                   setNewsEmail('');
                 }}
                 className="relative"
@@ -632,6 +648,7 @@ export default function ModalsAndDrawers() {
                       onClick={() => {
                         addToCart({
                           productId: quickViewProduct.id,
+                          shopifyVariantId: qvVariant?.shopifyVariantId,
                           slug: quickViewProduct.slug,
                           name: quickViewProduct.name,
                           image: quickViewProduct.image,
@@ -656,6 +673,7 @@ export default function ModalsAndDrawers() {
                       addToCart(
                         {
                           productId: quickViewProduct.id,
+                          shopifyVariantId: qvVariant?.shopifyVariantId,
                           slug: quickViewProduct.slug,
                           name: quickViewProduct.name,
                           image: quickViewProduct.image,
@@ -720,7 +738,7 @@ export default function ModalsAndDrawers() {
                     <span className="font-bold text-[#7B3CA1] tabular-nums">
                       {formatMoney(cartSummary.amountToFreeShipping, currency)}
                     </span>{' '}
-                    more to get Free Shipping (threshold ${FREE_SHIPPING_THRESHOLD})
+                    more to get Free Shipping (threshold {formatMoney(settings.freeShippingThreshold, currency)})
                   </>
                 ) : (
                   <span className="font-semibold text-emerald-700">
@@ -867,10 +885,14 @@ export default function ModalsAndDrawers() {
                     type="text"
                     value={zipEstimate}
                     onChange={(e) => setZipEstimate(e.target.value)}
-                    placeholder="ZIP Code"
+                    placeholder="City or Postal Code"
                     className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs"
                   />
-                  <span className="text-xs font-semibold text-emerald-700">Free Delivery</span>
+                  <span className="text-xs font-semibold text-emerald-700">
+                    {cartSummary.shippingCost === 0
+                      ? 'Free Delivery'
+                      : formatMoney(cartSummary.shippingCost, currency)}
+                  </span>
                 </div>
               )}
               {cartTab === 'coupon' && (
@@ -943,6 +965,16 @@ export default function ModalsAndDrawers() {
                   Check Out
                 </button>
               </div>
+              {shopifyCheckoutUrl && cart.length > 0 && (
+                <a
+                  href={shopifyCheckoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center text-[11px] font-semibold text-[#7B3CA1] hover:underline"
+                >
+                  Express Pay on Hosted Shopify Checkout ↗
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => setCartDrawerOpen(false)}

@@ -13,16 +13,48 @@ import {
 } from 'ai';
 import { routeFast } from '@/lib/chat/fastpath';
 import { clientKey, rateLimit } from '@/lib/chat/limits';
-import { SYSTEM_PROMPT } from '@/lib/chat/prompt';
+import { buildSystemPrompt } from '@/lib/chat/prompt';
 import { sanitizeMessages } from '@/lib/chat/sanitize';
-import { tools, type ChatUIMessage } from '@/lib/chat/tools';
+import { createChatTools, tools as baseTools, type ChatUIMessage } from '@/lib/chat/tools';
+import { getShopifyStorefrontData } from '@/lib/shopify/storefront';
+
+import fs from 'node:fs';
+import path from 'node:path';
 
 export const maxDuration = 30;
 
+let devEnvOverrides: Record<string, string> | null = null;
+function getChatEnv(key: string): string | undefined {
+  if (process.env.NODE_ENV !== 'production' && !devEnvOverrides) {
+    try {
+      const envPath = path.resolve(process.cwd(), '.env.local');
+      if (fs.existsSync(envPath)) {
+        const parsed: Record<string, string> = {};
+        for (const rawLine of fs.readFileSync(envPath, 'utf8').split('\n')) {
+          const line = rawLine.trim();
+          if (!line || line.startsWith('#')) continue;
+          const idx = line.indexOf('=');
+          if (idx === -1) continue;
+          parsed[line.slice(0, idx).trim()] = line
+            .slice(idx + 1)
+            .trim()
+            .replace(/^["']|["']$/g, '');
+        }
+        devEnvOverrides = parsed;
+      } else {
+        devEnvOverrides = {};
+      }
+    } catch {
+      devEnvOverrides = {};
+    }
+  }
+  return devEnvOverrides?.[key]?.trim() || process.env[key]?.trim();
+}
+
 // "creator/model" slugs are routed by Vercel AI Gateway.
-const PRIMARY = process.env.CHAT_MODEL ?? 'nvidia/nemotron-3.5-lightning-free';
+const PRIMARY = getChatEnv('CHAT_MODEL') ?? 'nvidia/nemotron-3.5-lightning-free';
 const FALLBACKS = (
-  process.env.CHAT_MODEL_FALLBACKS ??
+  getChatEnv('CHAT_MODEL_FALLBACKS') ??
   'google/gemini-2.5-flash-lite,google/gemini-2.5-flash,openai/gpt-4o-mini'
 )
   .split(',')
@@ -32,7 +64,7 @@ const FALLBACKS = (
 const MAX_HISTORY = 12;
 
 function getGatewayModel(modelId: string) {
-  const apiKey = process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_AI_GATEWAY;
+  const apiKey = getChatEnv('AI_GATEWAY_API_KEY') ?? getChatEnv('VERCEL_AI_GATEWAY');
   if (apiKey) {
     const gatewayProvider = createGateway({ apiKey });
     return gatewayProvider(modelId);
@@ -69,7 +101,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = await validateUIMessages<ChatUIMessage>({
       messages: body.messages,
-      tools,
+      tools: baseTools,
     });
     const clean = sanitizeMessages(validated);
     if (!clean) throw new Error('too long');
@@ -88,15 +120,20 @@ export async function POST(req: Request) {
           .join(' ')
       : '';
 
+  const storeData = await getShopifyStorefrontData();
+
   // 2. Fast path: emergencies, greetings, exact FAQ hits. No model call at all.
   if (lastText) {
-    const fast = routeFast(lastText);
+    const fast = routeFast(lastText, storeData);
     if (fast) return cannedResponse(fast.text);
   }
 
+  const storeTools = createChatTools(storeData);
+  const systemPrompt = buildSystemPrompt(storeData.settings);
+
   // 3. Model path. Pass the SAME tools to convertToModelMessages so toModelOutput slims old tool results.
   const modelMessages = pruneMessages({
-    messages: await convertToModelMessages(messages, { tools }),
+    messages: await convertToModelMessages(messages, { tools: storeTools }),
     reasoning: 'all',
     toolCalls: 'before-last-4-messages',
     emptyMessages: 'remove',
@@ -116,9 +153,9 @@ export async function POST(req: Request) {
   ) =>
     streamText({
       model: getGatewayModel(modelId),
-      instructions: SYSTEM_PROMPT,
+      instructions: systemPrompt,
       messages: stepMessages,
-      tools,
+      tools: storeTools,
       stopWhen: isStepCount(maxSteps),
       maxOutputTokens: 1200,
       temperature: 0.2,
@@ -156,11 +193,11 @@ export async function POST(req: Request) {
 
   // Buffer step-start / reasoning parts within each step until visible output (tool or text) starts,
   // so if the primary free model stalls or errors on a step we can seamlessly continue on a fallback model.
-  const resilientStream = new ReadableStream<TextStreamPart<typeof tools>>({
+  const resilientStream = new ReadableStream<TextStreamPart<typeof storeTools>>({
     async start(controller) {
       let emittedStart = false;
       let stepCommitted = false;
-      let stepBuffer: TextStreamPart<typeof tools>[] = [];
+      let stepBuffer: TextStreamPart<typeof storeTools>[] = [];
 
       const flushBuffer = () => {
         for (const buffered of stepBuffer) controller.enqueue(buffered);

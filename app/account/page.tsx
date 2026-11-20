@@ -18,7 +18,6 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { PRODUCTS } from '@/lib/data';
 import { formatMoney } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -41,6 +40,7 @@ function AccountPageInner() {
   const tabParam = (searchParams.get('tab') as AccountTab | null) ?? 'orders';
 
   const {
+    products,
     user,
     openAuthModal,
     logout,
@@ -88,8 +88,8 @@ function AccountPageInner() {
     { id: 'wishlist', label: 'Wishlist', icon: <Heart className="w-4 h-4" /> },
   ];
 
-  const wishlistProducts = PRODUCTS.filter((p) => wishlistIds.includes(p.id));
-  const compareProducts = PRODUCTS.filter((p) => compareIds.includes(p.id));
+  const wishlistProducts = products.filter((p) => wishlistIds.includes(p.id));
+  const compareProducts = products.filter((p) => compareIds.includes(p.id));
 
   // Allow Wishlist & Compare browsing even if logged out, gate Orders/Rx/Subscriptions cleanly
   const requiresAuth =
@@ -112,9 +112,9 @@ function AccountPageInner() {
             <div className="w-12 h-12 mx-auto rounded-full bg-red-50 text-[#DC3545] flex items-center justify-center">
               <Lock className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-[#082A66]">Sign In To Access Your Account</h2>
+            <h2 className="text-xl font-bold text-[#082A66]">Shopify Member Sign In Required</h2>
             <p className="text-xs text-slate-600">
-              View your orders, prescription approvals, and medicine subscription schedules.
+              Sign in with your Xmedcar Shopify account to access orders, prescription approvals, and medicine subscription schedules.
             </p>
             <button
               type="button"
@@ -508,9 +508,9 @@ function AccountPageInner() {
               {/* ACCOUNT DETAILS */}
               {activeTab === 'details' && user && (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
-                    updateUserProfile({ name: editName, email: editEmail, phone: editPhone });
+                    await updateUserProfile({ name: editName, email: editEmail, phone: editPhone });
                   }}
                   className="max-w-lg space-y-4"
                 >
@@ -710,6 +710,16 @@ function AccountPageInner() {
               >
                 Pay Now
               </button>
+            )}
+            {selectedOrder.shopifyOrderUrl && (
+              <a
+                href={selectedOrder.shopifyOrderUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center py-2.5 rounded-full border border-slate-200 hover:border-[#7B3CA1] text-[#082A66] text-xs font-semibold"
+              >
+                View on Shopify
+              </a>
             )}
           </div>
         </div>

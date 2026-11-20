@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, FileText, Tag } from 'lucide-react';
-import { INITIAL_USER } from '@/lib/data';
 import { formatMoney } from '@/lib/store-logic';
 import { useStore } from '@/context/StoreContext';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -11,19 +10,25 @@ import PrescriptionUploader from '@/components/PrescriptionUploader';
 import type { Order, PrescriptionFileMeta } from '@/lib/types';
 
 export default function CheckoutPage() {
+  const { user } = useStore();
+  return <CheckoutForm key={user?.id ?? 'guest'} />;
+}
+
+function CheckoutForm() {
   const {
     user,
+    defaultBillingUser,
     currency,
     cart,
     cartSummary,
     couponCode,
-    applyCoupon,
+    applyCouponAsync,
     cartNotes,
     placeOrder,
     showToast,
   } = useStore();
 
-  const defaults = user?.billingAddress ?? INITIAL_USER.billingAddress;
+  const defaults = user?.billingAddress ?? defaultBillingUser.billingAddress;
 
   const [firstName, setFirstName] = useState(defaults.firstName);
   const [lastName, setLastName] = useState(defaults.lastName);
@@ -48,9 +53,10 @@ export default function CheckoutPage() {
     'Direct bank transfer' | 'Check payments' | 'Cash on delivery'
   >('Direct bank transfer');
   const [formError, setFormError] = useState<string | null>(null);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) {
       setFormError('Your cart is empty.');
@@ -68,11 +74,62 @@ export default function CheckoutPage() {
 
     setFormError(null);
     setRxError(null);
+    setSubmittingOrder(true);
 
     const shippingAddr =
       shipDifferent && altAddress.trim()
         ? altAddress.trim()
         : `${street1} ${street2}, ${city}, ${stateName} ${zip}, ${country}`;
+
+    let shopifyOrderId: string | undefined;
+    let shopifyOrderNumber: string | undefined;
+    let shopifyOrderUrl: string | undefined;
+
+    try {
+      const res = await fetch('/api/shopify/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billingName: `${firstName.trim()} ${lastName.trim()}`,
+          billingEmail: email.trim(),
+          billingPhone: phone.trim(),
+          shippingAddress: {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            address1: shipDifferent && altAddress.trim() ? altAddress.trim() : street1.trim(),
+            address2: shipDifferent ? '' : street2.trim(),
+            city: city.trim(),
+            province: stateName.trim(),
+            zip: zip.trim(),
+            country,
+          },
+          paymentMethod,
+          orderNotes: orderNotes.trim() || undefined,
+          couponCode,
+          discountAmount: cartSummary.discountAmount,
+          shippingCost: cartSummary.shippingCost,
+          hasRx: cartSummary.hasRxItems,
+          rxFileName: rxFile?.name,
+          rxFile: rxFile ?? undefined,
+          items: cart,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        shopifyOrderId?: string;
+        shopifyOrderName?: string;
+        shopifyCheckoutUrl?: string;
+      };
+      if (res.ok && data.ok) {
+        shopifyOrderId = data.shopifyOrderId;
+        shopifyOrderNumber = data.shopifyOrderName;
+        shopifyOrderUrl = data.shopifyCheckoutUrl;
+      }
+    } catch {
+      // Fallback cleanly to local order capture if transient network error occurs
+    } finally {
+      setSubmittingOrder(false);
+    }
 
     const order = placeOrder({
       billingName: `${firstName.trim()} ${lastName.trim()}`,
@@ -82,10 +139,16 @@ export default function CheckoutPage() {
       paymentMethod,
       orderNotes: orderNotes.trim() || undefined,
       prescriptionFile: rxFile ?? undefined,
+      shopifyOrderId,
+      shopifyOrderNumber,
+      shopifyOrderUrl,
     });
 
     setConfirmedOrder(order);
     showToast(`Order ${order.number} confirmed!`);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (confirmedOrder) {
@@ -146,6 +209,16 @@ export default function CheckoutPage() {
             )}
 
             <div className="flex flex-wrap gap-3 pt-2">
+              {confirmedOrder.shopifyOrderUrl && (
+                <a
+                  href={confirmedOrder.shopifyOrderUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-2.5 rounded-full bg-[#082A66] hover:bg-[#102B5C] text-white text-xs font-semibold transition-colors"
+                >
+                  Pay / View on Shopify Checkout
+                </a>
+              )}
               <Link
                 href="/account?tab=orders"
                 className="px-6 py-2.5 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] text-white text-xs font-semibold transition-colors"
@@ -204,8 +277,8 @@ export default function CheckoutPage() {
               />
               <button
                 type="button"
-                onClick={() => {
-                  const res = applyCoupon(couponInput);
+                onClick={async () => {
+                  const res = await applyCouponAsync(couponInput);
                   showToast(res.message);
                 }}
                 className="px-4 py-2 rounded-lg bg-[#7B3CA1] text-white text-xs font-semibold cursor-pointer"
@@ -268,6 +341,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setCountry(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:border-[#7B3CA1]"
               >
+                <option value="Pakistan">Pakistan</option>
                 <option value="United States (US)">United States (US)</option>
                 <option value="Canada">Canada</option>
                 <option value="United Kingdom (UK)">United Kingdom (UK)</option>
@@ -481,7 +555,11 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="font-semibold text-[#082A66]">Shipment</span>
-                  <span className="font-bold text-[#082A66]">Free shipping</span>
+                  <span className="font-bold text-[#082A66] tabular-nums">
+                    {cartSummary.shippingCost === 0
+                      ? 'Free shipping'
+                      : formatMoney(cartSummary.shippingCost, currency)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                   <span className="text-base font-bold text-[#082A66]">Total</span>
@@ -541,10 +619,10 @@ export default function CheckoutPage() {
 
               <button
                 type="submit"
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || submittingOrder}
                 className="w-full py-3 rounded-full bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-50 text-white text-sm font-semibold transition-colors cursor-pointer"
               >
-                Place Order
+                {submittingOrder ? 'Creating Shopify Order...' : 'Place Order'}
               </button>
             </div>
           </div>

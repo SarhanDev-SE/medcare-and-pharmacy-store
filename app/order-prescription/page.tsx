@@ -17,13 +17,14 @@ export default function OrderPrescriptionPage() {
   const [rxFile, setRxFile] = useState<PrescriptionFileMeta | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [submittedReq, setSubmittedReq] = useState<PrescriptionRequest | null>(null);
   const [scanModalOpen, setScanModalOpen] = useState(false);
 
   const fullName = fullNameDraft ?? user?.name ?? '';
   const phone = phoneDraft ?? user?.phone ?? '';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim()) {
       setFormError('Please enter your full name and phone number.');
@@ -36,13 +37,20 @@ export default function OrderPrescriptionPage() {
 
     setFormError(null);
     setFileError(null);
+    setSubmitting(true);
 
-    const req = submitRxRequest({
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      file: rxFile,
-    });
-    setSubmittedReq(req);
+    try {
+      const req = await submitRxRequest({
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        file: rxFile,
+      });
+      setSubmittedReq(req);
+    } catch {
+      setFormError('Unable to upload prescription right now. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleFloatingScanClick = () => {
@@ -159,7 +167,7 @@ export default function OrderPrescriptionPage() {
                     required
                     value={phone}
                     onChange={(e) => setPhoneDraft(e.target.value)}
-                    placeholder="01239 895898"
+                    placeholder="+92 300 8451290"
                     className="w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#7B3CA1]"
                   />
                 </div>
@@ -181,9 +189,10 @@ export default function OrderPrescriptionPage() {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-[#7B3CA1] hover:bg-[#662F87] text-white text-sm font-semibold transition-colors cursor-pointer"
+                disabled={submitting}
+                className="w-full py-3 rounded-lg bg-[#7B3CA1] hover:bg-[#662F87] disabled:opacity-60 text-white text-sm font-semibold transition-colors cursor-pointer"
               >
-                Upload &amp; Order
+                {submitting ? 'Uploading Rx to Shopify...' : 'Upload & Order'}
               </button>
             </form>
           </div>

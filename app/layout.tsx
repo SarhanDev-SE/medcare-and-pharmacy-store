@@ -1,57 +1,47 @@
 import type { Metadata } from 'next';
-import { DM_Sans, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { StoreProvider } from '@/context/StoreContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ModalsAndDrawers from '@/components/ModalsAndDrawers';
 import ChatWidget from '@/components/chat/ChatWidget';
+import { getShopifyStorefrontData } from '@/lib/shopify/storefront';
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-plus-jakarta',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '600'],
-  variable: '--font-jetbrains-mono',
-});
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: 'Xmedcar — Online Pharmacy & Wellness Store',
   description:
-    'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials.',
+    'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials across Pakistan.',
   openGraph: {
     title: 'Xmedcar — Online Pharmacy & Wellness Store',
     description:
-      'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials.',
+      'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials across Pakistan.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Xmedcar — Online Pharmacy & Wellness Store',
     description:
-      'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials.',
+      'Trusted online pharmacy and wellness storefront featuring prescription (Rx) ordering, medicine subscriptions, curated supplements, and clinical essentials across Pakistan.',
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const storeData = await getShopifyStorefrontData();
+
   return (
-    <html
-      lang="en"
-      data-scroll-behavior="smooth"
-      className={`${plusJakarta.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        />
+      </head>
       <body suppressHydrationWarning className="min-h-screen flex flex-col bg-white text-slate-900">
-        <StoreProvider>
+        <StoreProvider initialData={storeData}>
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

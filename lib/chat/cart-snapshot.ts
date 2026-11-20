@@ -1,9 +1,27 @@
-import { calculateCartSummary } from '@/lib/store-logic';
-import type { CartItem } from '@/lib/types';
+import {
+  COUPONS,
+  FREE_SHIPPING_THRESHOLD,
+  STANDARD_SHIPPING_FEE,
+  calculateCartSummary,
+} from '@/lib/store-logic';
+import type { ActiveCoupon, CartItem } from '@/lib/types';
 import type { CartSnapshot } from './tools';
 
-export function snapshotCart(cart: CartItem[], coupon: string | null): CartSnapshot {
-  const s = calculateCartSummary(cart, coupon);
+export function snapshotCart(
+  cart: CartItem[],
+  coupon: string | null,
+  couponsMap: Record<string, ActiveCoupon> = COUPONS,
+  freeShippingThreshold: number = FREE_SHIPPING_THRESHOLD,
+  standardShippingFee: number = STANDARD_SHIPPING_FEE
+): CartSnapshot {
+  const s = calculateCartSummary(
+    cart,
+    coupon,
+    true,
+    couponsMap,
+    freeShippingThreshold,
+    standardShippingFee
+  );
   return {
     items: cart.map((c) => ({
       lineId: c.id,

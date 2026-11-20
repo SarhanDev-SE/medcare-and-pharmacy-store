@@ -7,53 +7,21 @@ import {
   ChevronRight,
   Star,
 } from 'lucide-react';
-import {
-  BLOG_POSTS,
-  MEGA_MENU_COLUMNS,
-  PARTNER_BRANDS,
-  PRODUCTS,
-  TESTIMONIALS,
-  TOP_CATEGORIES,
-} from '@/lib/data';
+import { useStore } from '@/context/StoreContext';
 import ProductCard from '@/components/ProductCard';
 
-const HERO_SLIDES = [
-  {
-    id: 'slide-1',
-    kicker: 'CLINICAL ORAL HYGIENE',
-    title: 'Daily Oral Care Essentials',
-    subtitle: 'Find oral care tools for fresher, stronger teeth and support daily long-lasting mouth health.',
-    cta: 'Shop Now',
-    href: '/shop?category=Medical%20Equipment',
-    image: '/images/hero/oral-care-hero.png',
-    bgClass: 'from-[#6D93B8] via-[#83A7C9] to-[#567C9F]',
-    textDark: false,
-  },
-  {
-    id: 'slide-2',
-    kicker: 'BOOST YOUR DAILY HEALTH ROUTINE',
-    title: 'Essential Vitamins for Wellness',
-    subtitle: 'Shop a curated range of daily vitamins developed to boost immunity and support steady energy.',
-    cta: 'Shop Now',
-    href: '/shop?category=Wellness%20Products',
-    image: '/images/hero/vitamins-hero.png',
-    bgClass: 'from-[#EFE6DB] via-[#E8DDD0] to-[#DFD0BF]',
-    textDark: true,
-  },
-  {
-    id: 'slide-3',
-    kicker: 'PHARMACY FORMULATED',
-    title: 'Premium Wellness Supplements',
-    subtitle: 'Enhance vitality & support your immune system with third-party tested pharmacy formulations.',
-    cta: 'Shop Now',
-    href: '/shop?category=Pharmacy%20Medicines',
-    image: '/images/hero/supplement-capsule-hero.png',
-    bgClass: 'from-[#E4EDF4] via-[#DCE6EF] to-[#CFDCE8]',
-    textDark: true,
-  },
-];
-
 export default function HomePage() {
+  const {
+    products,
+    categories,
+    featuredCollections,
+    heroSlides,
+    promoBanners,
+    blogs,
+    testimonials,
+    settings,
+  } = useStore();
+
   const [heroIdx, setHeroIdx] = useState(0);
   const [hoveredCatId, setHoveredCatId] = useState<string | null>(null);
   const [topPicksTab, setTopPicksTab] = useState<'All' | 'Medications' | 'Devices' | 'Wellness' | 'Offers'>('All');
@@ -73,18 +41,22 @@ export default function HomePage() {
   const mins = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
   const secs = String(secondsLeft % 60).padStart(2, '0');
 
-  const activeSlide = HERO_SLIDES[heroIdx];
+  const activeSlide = heroSlides[heroIdx % Math.max(1, heroSlides.length)] ?? heroSlides[0];
 
   const topPickProducts = (
     topPicksTab === 'All'
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.productTypeTab === topPicksTab)
+      ? featuredCollections.topPicks
+      : products.filter((p) => p.productTypeTab === topPicksTab)
   ).slice(0, 5);
 
-  const featuredProducts = PRODUCTS.slice(0, 8);
-  const recentProducts = PRODUCTS.slice(4, 7);
-  const bestsellerProducts = PRODUCTS.slice(8, 11);
-  const saleOffProducts = PRODUCTS.filter((p) => Boolean(p.discountPercent)).slice(0, 3);
+  const featuredProducts = featuredCollections.featured.slice(0, 8);
+  const recentProducts = featuredCollections.recent.slice(0, 3);
+  const bestsellerProducts = featuredCollections.bestsellers.slice(0, 3);
+  const saleOffProducts = featuredCollections.saleOff.slice(0, 3);
+
+  const dualBanners = promoBanners.filter((b) => b.sectionGroup === 'dual');
+  const splitMainBanner = promoBanners.find((b) => b.sectionGroup === 'split-main') ?? promoBanners[2];
+  const splitTiles = promoBanners.filter((b) => b.sectionGroup === 'split-tile');
 
   return (
     <div className="bg-white">
@@ -97,7 +69,7 @@ export default function HomePage() {
           {/* Left Category Rail */}
           <aside className="hidden lg:block lg:col-span-3 bg-white border border-slate-200 rounded-2xl overflow-hidden self-start">
             <ul className="divide-y divide-slate-100">
-              {TOP_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const isActive = hoveredCatId === cat.id;
                 return (
                   <li key={cat.id} onMouseEnter={() => setHoveredCatId(cat.id)}>
@@ -134,7 +106,7 @@ export default function HomePage() {
           {/* Category Flyout Panel (Screen 26) */}
           {hoveredCatId && (
             <div className="hidden lg:grid absolute left-[25.5%] top-2 w-[640px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 grid-cols-3 gap-6 z-30">
-              {MEGA_MENU_COLUMNS.map((col) => (
+              {settings.megaMenuColumns.map((col) => (
                 <div key={col.title}>
                   <h3 className="text-xs font-bold text-[#082A66] mb-2.5">{col.title}</h3>
                   <ul className="space-y-1.5">
@@ -209,7 +181,7 @@ export default function HomePage() {
             {/* Carousel Controls */}
             <button
               type="button"
-              onClick={() => setHeroIdx((i) => (i - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+              onClick={() => setHeroIdx((i) => (i - 1 + heroSlides.length) % heroSlides.length)}
               aria-label="Previous hero slide"
               className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-[#082A66] flex items-center justify-center shadow cursor-pointer"
             >
@@ -217,7 +189,7 @@ export default function HomePage() {
             </button>
             <button
               type="button"
-              onClick={() => setHeroIdx((i) => (i + 1) % HERO_SLIDES.length)}
+              onClick={() => setHeroIdx((i) => (i + 1) % heroSlides.length)}
               aria-label="Next hero slide"
               className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/85 hover:bg-white text-[#082A66] flex items-center justify-center shadow cursor-pointer"
             >
@@ -225,7 +197,7 @@ export default function HomePage() {
             </button>
 
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-              {HERO_SLIDES.map((s, idx) => (
+              {heroSlides.map((s, idx) => (
                 <button
                   key={s.id}
                   type="button"
@@ -293,31 +265,26 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[
-            { name: 'Cold & Flu', count: 24, img: '/images/categories/cold-flu.png' },
-            { name: 'Pain Relief', count: 20, img: '/images/categories/pain-relief.png' },
-            { name: 'Blood Pressure', count: 28, img: '/images/categories/blood-pressure.png' },
-            { name: 'Bandages', count: 16, img: '/images/categories/bandages.png' },
-            { name: 'Supplements', count: 17, img: '/images/categories/supplements.png' },
-            { name: 'Personal Care', count: 12, img: '/images/categories/personal-care.png' },
-          ].map((cat) => (
+          {categories.slice(0, 6).map((cat) => (
             <Link
-              key={cat.name}
-              href={`/shop?sub=${encodeURIComponent(cat.name)}`}
+              key={cat.id}
+              href={`/shop?category=${encodeURIComponent(cat.name)}`}
               className="group bg-[#F8F9FC] hover:bg-white border border-transparent hover:border-[#7B3CA1] rounded-2xl p-4 text-center transition-all"
             >
               <p className="text-sm font-bold text-[#082A66] group-hover:text-[#7B3CA1]">
                 {cat.name}
               </p>
               <p className="text-[11px] text-slate-500 tabular-nums mt-0.5">
-                {cat.count} Products
+                {cat.productCount} Products
               </p>
               <div className="h-28 flex items-center justify-center mt-3">
-                <img
-                  src={cat.img}
-                  alt={cat.name}
-                  className="max-h-24 object-contain mix-blend-multiply group-hover:scale-105 transition-transform"
-                />
+                {cat.image && (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="max-h-24 object-contain mix-blend-multiply group-hover:scale-105 transition-transform"
+                  />
+                )}
               </div>
             </Link>
           ))}
@@ -327,49 +294,38 @@ export default function HomePage() {
       {/* 4. Dual Promo Banners */}
       <section className="max-w-[1320px] mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-2xl bg-[#EEECD7] pl-7 sm:pl-9 pr-4 pt-6 pb-0 flex items-center justify-between gap-4 overflow-hidden min-h-[230px]">
-            <div className="space-y-3 max-w-xs pb-6">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#082A66]/75">
-                Reliable Daily Monitoring
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#082A66] leading-tight">
-                Glucose &amp; Care Essentials
-              </h3>
-              <Link
-                href="/shop?category=Health%20Care%20Devices"
-                className="inline-block px-5 py-2 rounded-full bg-white text-[#082A66] hover:bg-[#082A66] hover:text-white text-xs font-semibold transition-colors shadow-xs"
-              >
-                Shop Now
-              </Link>
+          {dualBanners.slice(0, 2).map((b, idx) => (
+            <div
+              key={b.id}
+              className={`rounded-2xl ${b.bgClass} ${
+                idx === 0 ? 'pl-7 sm:pl-9 pr-4 pt-6 pb-0' : 'p-7 sm:p-9'
+              } flex items-center justify-between gap-4 overflow-hidden min-h-[230px]`}
+            >
+              <div className={`space-y-3 max-w-xs ${idx === 0 ? 'pb-6' : ''}`}>
+                {b.kicker && (
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3CA1]">
+                    {b.kicker}
+                  </p>
+                )}
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-[#082A66] leading-tight">
+                  {b.title}
+                </h3>
+                <Link
+                  href={b.href}
+                  className="inline-block px-5 py-2 rounded-full bg-white text-[#082A66] hover:bg-[#7B3CA1] hover:text-white text-xs font-semibold transition-colors shadow-xs"
+                >
+                  {b.cta || 'Shop Now'}
+                </Link>
+              </div>
+              <img
+                src={b.image}
+                alt={b.title}
+                className={`w-36 sm:w-48 ${
+                  idx === 0 ? 'h-52 self-end' : 'h-44 mix-blend-multiply'
+                } object-contain shrink-0`}
+              />
             </div>
-            <img
-              src="/images/hero/glucose-device.png"
-              alt="Diagnostic monitoring device"
-              className="w-36 sm:w-48 h-52 object-contain self-end shrink-0"
-            />
-          </div>
-
-          <div className="rounded-2xl bg-gradient-to-br from-[#EAF3FA] to-[#D4E6F5] p-7 sm:p-9 flex items-center justify-between gap-4 overflow-hidden min-h-[230px]">
-            <div className="space-y-3 max-w-xs">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#7B3CA1]">
-                For Relief, Care, And Wellness
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#082A66] leading-tight">
-                Trusted Pills You Can Rely On
-              </h3>
-              <Link
-                href="/shop?category=Pharmacy%20Medicines"
-                className="inline-block px-5 py-2 rounded-full bg-white text-[#082A66] hover:bg-[#7B3CA1] hover:text-white text-xs font-semibold transition-colors shadow-xs"
-              >
-                Shop Now
-              </Link>
-            </div>
-            <img
-              src="/images/categories/oral-medicine.png"
-              alt="Daily capsules and tablets"
-              className="w-36 sm:w-48 h-44 object-contain mix-blend-multiply shrink-0"
-            />
-          </div>
+          ))}
         </div>
       </section>
 
@@ -402,7 +358,7 @@ export default function HomePage() {
         <div className="rounded-2xl bg-[#7B3CA1] text-white px-6 sm:px-10 py-6 flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <h2 className="text-lg sm:text-xl font-bold">
-              Better Care, Healthier Life, Smarter Savings!
+              {settings.countdownHeadline}
             </h2>
             <Link
               href="/shop?deals=1"
@@ -434,52 +390,51 @@ export default function HomePage() {
       {/* 7. Split Banner with 4 Category Highlights */}
       <section className="max-w-[1320px] mx-auto px-4 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-6 rounded-2xl bg-[#E5DFCA] pl-7 sm:pl-10 pr-4 pt-7 pb-0 flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden">
-            <div className="space-y-3 max-w-xs pb-7">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                For Energy, Immunity, And Wellness
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#082A66] leading-tight">
-                Vitamins That Support Every Day
-              </h3>
-              <Link
-                href="/shop?category=Wellness%20Products"
-                className="inline-block px-6 py-2.5 rounded-full bg-white text-[#082A66] hover:bg-[#7B3CA1] hover:text-white text-xs font-semibold transition-colors shadow-xs"
-              >
-                Shop Now
-              </Link>
+          {splitMainBanner && (
+            <div className={`lg:col-span-6 rounded-2xl ${splitMainBanner.bgClass} pl-7 sm:pl-10 pr-4 pt-7 pb-0 flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden`}>
+              <div className="space-y-3 max-w-xs pb-7">
+                {splitMainBanner.kicker && (
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                    {splitMainBanner.kicker}
+                  </p>
+                )}
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-[#082A66] leading-tight">
+                  {splitMainBanner.title}
+                </h3>
+                <Link
+                  href={splitMainBanner.href}
+                  className="inline-block px-6 py-2.5 rounded-full bg-white text-[#082A66] hover:bg-[#7B3CA1] hover:text-white text-xs font-semibold transition-colors shadow-xs"
+                >
+                  {splitMainBanner.cta || 'Shop Now'}
+                </Link>
+              </div>
+              <img
+                src={splitMainBanner.image}
+                alt={splitMainBanner.title}
+                className="max-h-72 w-auto object-contain self-end shrink-0"
+              />
             </div>
-            <img
-              src="/images/hero/vitamins-every-day.png"
-              alt="Daily herbal vitamins"
-              className="max-h-72 w-auto object-contain self-end shrink-0"
-            />
-          </div>
+          )}
 
           <div className="lg:col-span-6 grid grid-cols-2 gap-4">
-            {[
-              { name: 'Sonic Toothbrush', img: '/images/categories/sonic-toothbrush.png', query: 'Medical Equipment' },
-              { name: 'Oral Medicine', img: '/images/categories/oral-medicine.png', query: 'Pharmacy Medicines' },
-              { name: 'Health Supplements', img: '/images/categories/health-supplements.png', query: 'Wellness Products' },
-              { name: 'Medical Mask', img: '/images/categories/medical-mask.png', query: 'First Aid & Safety' },
-            ].map((item) => (
+            {splitTiles.slice(0, 4).map((item) => (
               <Link
-                key={item.name}
-                href={`/shop?category=${encodeURIComponent(item.query)}`}
+                key={item.id}
+                href={item.href}
                 className="group bg-[#F8F9FC] hover:bg-white border border-slate-200/70 hover:border-[#7B3CA1] rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all"
               >
                 <div className="h-28 flex items-center justify-center">
                   <img
-                    src={item.img}
-                    alt={item.name}
+                    src={item.image}
+                    alt={item.title}
                     className="max-h-24 object-contain mix-blend-multiply group-hover:scale-105 transition-transform"
                   />
                 </div>
                 <div className="mt-3">
                   <p className="text-sm font-bold text-[#082A66] group-hover:text-[#7B3CA1]">
-                    {item.name}
+                    {item.title}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">View Products</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.cta || 'View Products'}</p>
                 </div>
               </Link>
             ))}
@@ -544,7 +499,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TESTIMONIALS.map((t) => (
+            {testimonials.map((t) => (
               <div key={t.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center text-[#082A66] mb-3">
@@ -564,7 +519,7 @@ export default function HomePage() {
 
           {/* Partner Store Strip */}
           <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {PARTNER_BRANDS.slice(0, 6).map((brand) => (
+            {settings.partnerBrands.slice(0, 6).map((brand) => (
               <div
                 key={brand}
                 className="bg-white border border-slate-200/80 rounded-xl py-3.5 px-4 text-center text-sm font-bold tracking-wide text-slate-400"
@@ -594,7 +549,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {BLOG_POSTS.slice(0, 3).map((post) => (
+          {blogs.slice(0, 3).map((post) => (
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}

@@ -8,6 +8,10 @@ import {
   filterAndSortProducts,
   transitionSubscription,
   getSubscriptionPrice,
+  formatMoney,
+  usdToPkr,
+  FREE_SHIPPING_THRESHOLD,
+  STANDARD_SHIPPING_FEE,
   estimateDataUrlByteSize,
   createCapturedRxFileMeta,
   getCameraErrorMessage,
@@ -21,7 +25,7 @@ const sampleCart: CartItem[] = [
     slug: 'incite-nutrition-vitamin-d-5000-iu',
     name: 'Incite Nutrition Vitamin D 5000 IU',
     image: '/images/products/incite-vitamin-d3.png',
-    price: 39.99,
+    price: usdToPkr(39.99), // 11200 PKR
     quantity: 1,
     isRx: false,
     variantLabel: '10 Tablet',
@@ -33,10 +37,10 @@ const sampleCart: CartItem[] = [
     slug: 'gaia-herbs-relax-gummies',
     name: 'Helps maintain emotional well-being Relax Gummies',
     image: '/images/products/gaia-relax-gummies.png',
-    price: 44.99,
+    price: getSubscriptionPrice(usdToPkr(49.99)), // 11900 PKR
     quantity: 1,
     isRx: true,
-    variantLabel: '60 Days Supply (10% Off)',
+    variantLabel: '60 Days Supply (15% Off)',
     purchaseMode: 'subscription',
     subscriptionIntervalDays: 60,
   },
@@ -46,26 +50,53 @@ const sampleCart: CartItem[] = [
     slug: 'gaia-herbs-turmeric-supreme-extra-strength',
     name: 'Turmeric Supreme Extra Strength',
     image: '/images/products/gaia-turmeric-supreme.png',
-    price: 24.99,
+    price: usdToPkr(24.99), // 7000 PKR
     quantity: 1,
     isRx: true,
     purchaseMode: 'one-time',
   },
 ];
 
-test('calculateCartSummary matches $109.97 subtotal and $90.03 to free shipping ($200 threshold)', () => {
-  const summary = calculateCartSummary(sampleCart, null);
-  assert.equal(summary.subtotal, 109.97);
-  assert.equal(summary.amountToFreeShipping, 90.03);
-  assert.equal(summary.total, 109.97);
-  assert.equal(summary.hasRxItems, true);
-  assert.equal(summary.itemCount, 3);
+test('formatMoney formats PKR cleanly and converts USD/EUR/GBP', () => {
+  assert.equal(formatMoney(14000, 'PKR'), 'Rs. 14,000');
+  assert.equal(formatMoney(14000, 'USD'), '$50.00');
 });
 
-test('calculateCartSummary applies FIRST10 10% discount correctly', () => {
+test('calculateCartSummary computes PKR subtotal, free shipping over threshold, and standard fee under threshold', () => {
+  const above = calculateCartSummary(sampleCart, null);
+  assert.equal(above.subtotal, 30100);
+  assert.equal(above.amountToFreeShipping, 0);
+  assert.equal(above.shippingCost, 0);
+  assert.equal(above.total, 30100);
+  assert.equal(above.hasRxItems, true);
+  assert.equal(above.itemCount, 3);
+
+  const below = calculateCartSummary(
+    [
+      {
+        id: 'small',
+        productId: 'p1',
+        slug: 'p1',
+        name: 'Small Pack',
+        image: '',
+        price: 5000,
+        quantity: 1,
+        isRx: false,
+        purchaseMode: 'one-time',
+      },
+    ],
+    null
+  );
+  assert.equal(below.subtotal, 5000);
+  assert.equal(below.amountToFreeShipping, FREE_SHIPPING_THRESHOLD - 5000);
+  assert.equal(below.shippingCost, STANDARD_SHIPPING_FEE);
+  assert.equal(below.total, 5000 + STANDARD_SHIPPING_FEE);
+});
+
+test('calculateCartSummary applies FIRST10 10% discount in PKR correctly', () => {
   const summary = calculateCartSummary(sampleCart, 'first10');
-  assert.equal(summary.discountAmount, 11.0);
-  assert.equal(summary.total, 98.97);
+  assert.equal(summary.discountAmount, 3010);
+  assert.equal(summary.total, 27090);
 });
 
 test('partitionCartItems separates regular and prescription items', () => {
@@ -100,8 +131,8 @@ test('validatePrescriptionFile enforces allowed extensions/types and 2MB max siz
   );
 });
 
-test('getSubscriptionPrice applies 15% savings', () => {
-  assert.equal(getSubscriptionPrice(49.99), 42.49);
+test('getSubscriptionPrice applies 15% savings in PKR', () => {
+  assert.equal(getSubscriptionPrice(14000), 11900);
 });
 
 test('transitionSubscription toggles ACTIVE/PAUSED/CANCELLED and updates interval', () => {
@@ -112,7 +143,7 @@ test('transitionSubscription toggles ACTIVE/PAUSED/CANCELLED and updates interva
     image: '/img.png',
     intervalDays: 30,
     quantity: 1,
-    pricePerCycle: 47.49,
+    pricePerCycle: 11900,
     nextRenewal: 'August 15, 2026',
     status: 'ACTIVE',
     history: [],
@@ -127,7 +158,7 @@ test('transitionSubscription toggles ACTIVE/PAUSED/CANCELLED and updates interva
   assert.equal(cancelled.status, 'CANCELLED');
 });
 
-test('filterAndSortProducts filters by brand, price, stock, search, and sorts correctly', () => {
+test('filterAndSortProducts filters by brand, PKR price, stock, search, and sorts correctly', () => {
   const mockProducts = [
     {
       id: '1',
@@ -136,7 +167,7 @@ test('filterAndSortProducts filters by brand, price, stock, search, and sorts co
       category: 'Vitamins',
       subcategory: 'Stomach & gut relief',
       brand: 'Glaxo SmithKline',
-      price: 12.99,
+      price: 3640,
       rating: 4.9,
       reviewCount: 54,
       image: '',
@@ -168,7 +199,7 @@ test('filterAndSortProducts filters by brand, price, stock, search, and sorts co
       category: 'Supplements',
       subcategory: 'Pain Relief',
       brand: 'Teva Pharmaceuticals',
-      price: 49.99,
+      price: 14000,
       rating: 4.5,
       reviewCount: 12,
       image: '',
@@ -199,7 +230,7 @@ test('filterAndSortProducts filters by brand, price, stock, search, and sorts co
     categories: [],
     subcategory: null,
     minPrice: 0,
-    maxPrice: 100,
+    maxPrice: 20000,
     availability: ['in-stock'],
     brands: [],
     colors: [],
@@ -220,9 +251,7 @@ test('filterAndSortProducts filters by brand, price, stock, search, and sorts co
 });
 
 test('estimateDataUrlByteSize and createCapturedRxFileMeta produce valid PrescriptionFileMeta', () => {
-  // "hello!" -> aGVsbG8h (8 base64 chars, 0 padding -> 6 bytes)
   assert.equal(estimateDataUrlByteSize('data:image/jpeg;base64,aGVsbG8h'), 6);
-  // "hi" -> aGk= (4 base64 chars, 1 '=' padding -> 2 bytes)
   assert.equal(estimateDataUrlByteSize('data:image/jpeg;base64,aGk='), 2);
   assert.equal(estimateDataUrlByteSize('invalid'), 0);
 
@@ -253,4 +282,3 @@ test('getCameraErrorMessage returns user-friendly guidance for permission and de
   assert.match(getCameraErrorMessage(new DOMException('Busy', 'NotReadableError')), /busy/i);
   assert.match(getCameraErrorMessage(new Error('Unknown')), /could not access/i);
 });
-

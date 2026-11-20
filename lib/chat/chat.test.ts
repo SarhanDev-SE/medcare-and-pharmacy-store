@@ -7,11 +7,11 @@ import { MAX_TEXT_PER_MESSAGE, sanitizeMessages } from './sanitize';
 import type { ChatUIMessage } from './tools';
 import { POST } from '../../app/api/chat/route';
 
-test('searchCatalog ranks vitamin d3 matches, resolves synonyms, and enforces filters', () => {
+test('searchCatalog ranks vitamin d3 matches in PKR, resolves synonyms, and enforces filters', () => {
   const vitD = searchCatalog({ query: 'vitamin d3', inStockOnly: true });
   assert.ok(vitD.products.length >= 1);
   assert.equal(vitD.products[0].id, 'incite-vitamin-d3');
-  assert.equal(vitD.products[0].price, 39.99);
+  assert.equal(vitD.products[0].price, 11200);
 
   const sleep = searchCatalog({ query: 'help me sleep', inStockOnly: true });
   assert.ok(sleep.products.length >= 1);
@@ -19,10 +19,10 @@ test('searchCatalog ranks vitamin d3 matches, resolves synonyms, and enforces fi
     sleep.products.some((p) => p.id === 'gaia-relax-gummies' || p.id === 'spirit-lift-tincture')
   );
 
-  const under20Otc = searchCatalog({ maxPrice: 20, rx: 'otc-only', inStockOnly: true });
-  assert.ok(under20Otc.products.length >= 1);
-  for (const p of under20Otc.products) {
-    assert.ok(p.price <= 20);
+  const under6000Otc = searchCatalog({ maxPrice: 6000, rx: 'otc-only', inStockOnly: true });
+  assert.ok(under6000Otc.products.length >= 1);
+  for (const p of under6000Otc.products) {
+    assert.ok(p.price <= 6000);
     assert.equal(p.isRx, false);
   }
 
@@ -31,8 +31,8 @@ test('searchCatalog ranks vitamin d3 matches, resolves synonyms, and enforces fi
   assert.deepEqual(none.products, []);
 });
 
-test('buildCartLine resolves default variant price, rejects invalid requests, and computes subscription discount', () => {
-  // Default variant of gaia-relax-gummies is 60ct ($49.99), not variants[0] 30ct ($12.99)
+test('buildCartLine resolves default variant PKR price, rejects invalid requests, and computes subscription discount', () => {
+  // Default variant of gaia-relax-gummies is 60ct (14000 PKR), not variants[0] 30ct (3640 PKR)
   const relaxDefault = buildCartLine({
     productId: 'gaia-relax-gummies',
     quantity: 1,
@@ -40,7 +40,7 @@ test('buildCartLine resolves default variant price, rejects invalid requests, an
   });
   assert.equal(relaxDefault.ok, true);
   if (relaxDefault.ok) {
-    assert.equal(relaxDefault.line.price, 49.99);
+    assert.equal(relaxDefault.line.price, 14000);
     assert.equal(relaxDefault.line.variantLabel, '60 Count (Pack Of 2)');
     assert.equal(relaxDefault.line.isRx, true);
   }
@@ -55,8 +55,8 @@ test('buildCartLine resolves default variant price, rejects invalid requests, an
   });
   assert.equal(relaxSub.ok, true);
   if (relaxSub.ok) {
-    assert.equal(relaxSub.line.price, 42.49);
-    assert.equal(relaxSub.line.originalPrice, 49.99);
+    assert.equal(relaxSub.line.price, 11900);
+    assert.equal(relaxSub.line.originalPrice, 14000);
     assert.equal(relaxSub.line.variantLabel, '60 Days Supply (15% Off)');
     assert.equal(relaxSub.line.subscriptionIntervalDays, 60);
   }
@@ -95,40 +95,43 @@ test('buildCartLine resolves default variant price, rejects invalid requests, an
   assert.equal(badQty.ok, false);
 
   // Explicit check of defaultVariant helper
-  assert.equal(defaultVariant({
-    id: 'test',
-    slug: 'test',
-    name: 'Test',
-    category: 'Vitamins',
-    subcategory: 'Vitamins',
-    brand: 'Test',
-    price: 39.99,
-    rating: 5,
-    reviewCount: 1,
-    image: '',
-    gallery: [],
-    isRx: false,
-    inStock: true,
-    stockCount: 5,
-    expiryDate: '2027',
-    medicineType: 'Tablet',
-    composition: 'Vit D',
-    manufacturer: 'Test',
-    manufacturerAddress: '',
-    manufacturerPhone: '',
-    benefits: [],
-    description: '',
-    usesAndBenefits: '',
-    dosage: '',
-    sideEffects: '',
-    safetyAdvice: '',
-    variants: [
-      { id: 'v1', label: 'Small', price: 12.99 },
-      { id: 'v2', label: 'Large', price: 39.99 },
-    ],
-    subscriptionEligible: true,
-    reviews: [],
-  }).id, 'v2');
+  assert.equal(
+    defaultVariant({
+      id: 'test',
+      slug: 'test',
+      name: 'Test',
+      category: 'Vitamins',
+      subcategory: 'Vitamins',
+      brand: 'Test',
+      price: 11200,
+      rating: 5,
+      reviewCount: 1,
+      image: '',
+      gallery: [],
+      isRx: false,
+      inStock: true,
+      stockCount: 5,
+      expiryDate: '2027',
+      medicineType: 'Tablet',
+      composition: 'Vit D',
+      manufacturer: 'Test',
+      manufacturerAddress: '',
+      manufacturerPhone: '',
+      benefits: [],
+      description: '',
+      usesAndBenefits: '',
+      dosage: '',
+      sideEffects: '',
+      safetyAdvice: '',
+      variants: [
+        { id: 'v1', label: 'Small', price: 3640 },
+        { id: 'v2', label: 'Large', price: 11200 },
+      ],
+      subscriptionEligible: true,
+      reviews: [],
+    }).id,
+    'v2'
+  );
 });
 
 test('routeFast catches emergencies, greetings, and exact FAQs without false positives', () => {
@@ -274,7 +277,7 @@ test('POST /api/chat validates shape, enforces rate limits, and serves zero-toke
   const faqStream = await faqRes.text();
   assert.match(faqStream, /business days/i);
 
-  // Fast-path emergency -> 200 SSE stream containing 911
+  // Fast-path emergency -> 200 SSE stream containing 1122 / 911
   const emRes = await POST(
     reqOf({
       messages: [
